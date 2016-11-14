@@ -1,0 +1,3 @@
+##INFO=<ID=RNA_REF_COUNT,Number=1,Type=Integer,Description="# count of REF alleles seen in RNA">
+##INFO=<ID=RNA_ALT_COUNT,Number=1,Type=Float,Description="# count of ALT alleles seen in RNA">
+##INFO=<ID=RNA_ALT_FREQ,Number=1,Type=Integer,Description="# frequency of ALT alleles seen in RNA">

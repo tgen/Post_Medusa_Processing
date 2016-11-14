@@ -1,0 +1,107 @@
+#!/bin/bash
+#PBS -S /bin/bash
+#PBS -N cna2015_exo
+#PBS -l walltime=12:00:00
+#PBS -l nodes=1:ppn=2
+#PBS -M ${USER}@tgen.org
+#PBS -m a
+#PBS -j oe
+#PBS -o ${HOME}/STD_OUT/${PBS_JOBNAME}_${OFILE}_${PBS_JOBID}.out
+
+
+module load VCFtools/0.1.10
+module load perl/5.14.2
+module load MCR/9.0
+module load R/3.0.0
+
+export PERL5LIB=$PERL5LIB:/home/jaldrich/perl5/lib/perl5
+
+MCRPATH=/packages/MCR/9.0/v90
+
+cd $PBS_O_WORKDIR
+
+SAMPATH="/packages/samtools/0.1.18/samtools"
+TARGETSFILE=${CNAEXOMETARGET}
+EXTENSIONS=/home/tgenref/pecan/post_central_pipe_processing/post_medusa_V1.0/save_recipe.txt
+ZTABLE="/home/tgenref/pecan/cna_manual/ztable.txt"
+CCDSLIST="/home/tgenref/pecan/ensembl_v74/Homo_sapiens.GRCh37.74.gtf.hs37d5.EGFRvIII.gtf"
+
+# Gender testing variables
+SNPSIFT=/home/jkeats/local/snpEff_v3.6c/snpEff/SnpSift.jar
+DBSNP_VCF=/home/tgenref/pipeline_v0.3/gatk_bundle_2.5/b37/dbsnp_137.b37.vcf
+GENDER_GRAPH_R=/home/tgenref/pecan/post_central_pipe_processing/post_medusa_V1.0/jobScripts/Gender_Graph.R
+
+NORMAL_NAME="`echo ${NORMALSAMPLE} | cut -d_ -f1-2`"
+
+NORMALDAT=${NORMALSAMPLE}.proj.md.jr.bam.clc.cln.dat
+TUMORDAT=${TUMORSAMPLE}.proj.md.jr.bam.clc.cln.dat
+
+TDAT=`find /scratch/achristofferson/CNA_MMRF_normal_pair_test/dat_files/ -name ${TUMORSAMPLE}.proj.md.jr.bam.clc.cln.dat | head -n1 `
+THS=`find /scratch/achristofferson/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016 -name ${TUMORSAMPLE}.proj.md.jr.bam.picHSMetrics | head -n1 `
+NDAT=`find /scratch/achristofferson/CNA_MMRF_normal_pair_test/dat_files/ -name ${NORMALSAMPLE}.proj.md.jr.bam.clc.cln.dat | head -n1 `
+NHS=`find /scratch/achristofferson/post_medusa_processing/${NORMAL_NAME}/cna_manual_2016 -name ${NORMALSAMPLE}.proj.md.jr.bam.picHSMetrics | head -n1 `
+
+
+if [ -d /scratch/achristofferson/post_medusa_processing/${PATIENT_NAME} ]
+then
+	if [ -f ${TDAT} ] &&  [ -f ${THS} ]
+	then
+		if [ -f ${NDAT} ] && [ -f ${NHS} ]
+		then
+			cp $NDAT .
+			cp $TDAT .
+			cp $THS .
+			cp $NHS .
+			
+		else
+			echo Warning !! ${NORMAL_NAME} normal dat or hs metrics does not exist in post prossessing directory.
+			exit 1
+		fi		
+	else
+		echo Warning!! ${PATIENT_NAME} tumor dat or hs metrics does not exist in post prossessing directory.
+		exit 1
+	fi
+else
+	echo Warning!! ${PATIENT_NAME} does not exist in post prossessing directory.
+	exit 1
+fi 
+
+NORMX=`cat ${NORMALSAMPLE}.proj.md.jr.bam.picHSMetrics | grep -v ^# | grep -v ^BAIT | cut -f 22`
+echo $NORMX
+TUMORX=`cat ${TUMORSAMPLE}.proj.md.jr.bam.picHSMetrics | grep -v ^# | grep -v ^BAIT | cut -f 22`
+echo $TUMORX
+
+
+assayID="Exome"
+HETFILE=0
+smWin=6                 #   <<<< THIS CAN BE ADJUSTED - smoothing window size >>>>
+fcThresh=0.2           #   <<<< THIS CAN BE ADJUSTED - fold-change threshold - plot >>>>
+res=2                   #   <<<< THIS CAN BE ADJUSTED - min resolution >>>>
+#maxGap=1200
+maxGap=1000             #   <<<< THIS CAN BE ADJUSTED - max distance between consecutive postions >>>>
+
+hetDepthN=${NORMX}      #   <<<< THIS CAN BE ADJUSTED - min depth of diploid het position >>>>
+hetDepthT=${TUMORX}     #   <<<< THIS CAN BE ADJUSTED - min depth of diploid het position >>>>
+hetDev=0.025
+readDepth=$( echo "$hetDepthN * 3" | bc )
+
+cp ${TARGETSFILE} .
+
+TARGETSFILE=`echo ${TARGETSFILE} | rev | cut -d/ -f1 | rev`
+
+awk -F'\t' ' $1 != 23 && $1 != 24 && $1 != 25 { print $0 } ; $1 == 23 || $1 == 24 || $1 == 25 { OFS = "\t" ; print $1,$2,$3,"0" }' ${TARGETSFILE} > tempT
+mv tempT ${TARGETSFILE} 
+
+#TARGETSFILE=${PBS_O_WORKDIR}/${TARGETSFILE}
+#echo ${TARGETSFILE}
+
+echo $readDepth
+echo "time /home/tgenref/pecan/cna_manual/pegasusCNA_MMRF/run_ngsCNA.sh ${MCRPATH} ${NORMALDAT} ${TUMORDAT} ${OFILE}_exo ${HETFILE} ${smWin} ${fcThresh} ${assayID} ${res} ${readDepth} ${maxGap} ${hetDepthN} ${hetDepthT} ${hetDev} ${TARGETSFILE}"
+
+time /home/tgenref/pecan/cna_manual/pegasusCNA_MMRF/run_ngsCNA.sh ${MCRPATH} ${NORMALDAT} ${TUMORDAT} ${OFILE}_exo ${HETFILE} ${smWin} ${fcThresh} ${assayID} ${res} ${readDepth} ${maxGap} ${hetDepthN} ${hetDepthT} ${hetDev} ${TARGETSFILE}
+
+Rscript --vanilla /home/tgenref/pecan/cna_manual/runDNAcopyExomeV4.R ${OFILE}_exo.cna.tsv ${OFILE}_exo.seg
+
+Rscript --vanilla /home/tgenref/pecan/cna_manual/plotCGH_EXOME.R ${OFILE}_exo.cna.tsv ${OFILE}_exo.amp.tsv ${OFILE}_exo.del.tsv ${OFILE}_exo
+
+

@@ -1,0 +1,80 @@
+#!/bin/bash
+#PBS -l nodes=1:ppn=16
+#PBS -N Kallisto_GTF
+#PBS -l walltime=48:00:00
+#PBS -j oe
+#PBS -o ${HOME}/STD_OUT/${PBS_JOBNAME}_${RNASAMPLEID}_${PBS_JOBID}.out
+
+cd $PBS_O_WORKDIR
+
+# Load kallisto module
+module load kallisto/0.42.4
+module load salmon/0.5.0
+
+
+#####################################################
+##
+##   VARIABLES
+##
+#####################################################
+
+KALLISTO_BINARY=/home/clegendre/tools/kallisto/0.42.4/bin/kallisto
+KALLISTO_INDEX_GTF=/home/achristofferson/kallisto_index/Homo_sapiens_number_fix.GRCh37.74.gtf.hs37d5.EGFRvIII.fa.index
+
+# Make fastq list for Kallisto
+FASTQS="`ls -1 ${SAMPLE}*.fastq.gz | tr '\n' ' '`"
+
+${KALLISTO_BINARY} quant \
+        -i ${KALLISTO_INDEX_GTF} \
+        -t 14 \
+        -b 100 \
+        -o ${SAMPLE}.kallistoDir/ensembl74_GTF \
+        ${FASTQS}
+
+if [ "$?" -ne "0" ]
+then
+        ssh ${USER}@172.19.1.222 "cd ${STARTDIR}/${PATIENT_NAME} ; \
+                rm ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/ensembl74_GTF/Kallisto_In_Progress ; \
+                echo Salmon failed for ${RNASAMPLEID} >> ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/ensembl74_GTF/Kallisto_Fail ; \
+                echo Salmon failed for ${RNASAMPLEID} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org"
+        exit 1
+else
+        cd ${SAMPLE}.kallistoDir/ensembl74_GTF
+	mv abundance.h5 ${SAMPLE}_kallisto_e74GTF_abundance.h5
+	mv abundance.tsv ${SAMPLE}_kallisto_e74GTF_abundance.tsv
+
+	DIR=`pwd`
+	
+	ssh ${USER}@172.19.1.222 "rsync -r ${DIR} ${STARTDIR}/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/ "
+
+        if [ $? -ne 0 ]
+        then
+                ssh ${USER}@172.19.1.222 "rm ${STARTDIR}/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/ensembl74_GTF/Kallisto_In_Progress ; \
+                        echo Failed to rsync kallisto dir to isilon for ${RNASAMPLEID} >> ${STARTDIR}/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/ensembl74_GTF/Kallisto_Fail ; \
+                        echo Failed to rsync kallisto dir to isilon for ${RNASAMPLEID} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org"
+
+        else
+                ssh ${USER}@172.19.1.222 "rm ${STARTDIR}/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/ensembl74_GTF/Kallisto_In_Progress ; \
+                        touch ${STARTDIR}/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/ensembl74_GTF/Kallisto_Complete ; \
+                        COMPLETE=0 ; \
+                        for RSAMPLE in \`echo ${RNACHECK} |sed 's/@/\n/g'\`
+                        do
+				echo ${STARTDIR}/${PATIENT_NAME}/\${RSAMPLE}.kallistoDir/ensembl74_GTF/Kallisto_Complete
+                                if [ ! -f ${STARTDIR}/${PATIENT_NAME}/\${RSAMPLE}.kallistoDir/ensembl74_cDNA/Kallisto_Complete ] || [ ! -f ${STARTDIR}/${PATIENT_NAME}/\${RSAMPLE}.kallistoDir/ensembl74_GTF/Kallisto_Complete ]
+                                then
+                                        COMPLETE=1
+                                fi
+                        done ; \
+                        if [ \${COMPLETE} = 0 ]
+                        then
+                                rm ${STARTDIR}/${PATIENT_NAME}/Kallisto_In_Progress
+                                touch ${STARTDIR}/${PATIENT_NAME}/Kallisto_Complete
+                        fi "
+
+
+
+        fi
+fi
+
+
+

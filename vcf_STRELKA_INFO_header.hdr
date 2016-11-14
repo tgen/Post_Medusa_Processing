@@ -1,0 +1,24 @@
+##FILTER=<ID=STRELKA_BCNoise,Description="Average fraction of filtered basecalls within 50 bases of the indel exceeds 0.3">
+##FILTER=<ID=STRELKA_QSI_ref,Description="Normal sample is not homozygous ref or sindel Q-score < 30, ie calls with NT!=ref or QSI_NT < 30">
+##FILTER=<ID=STRELKA_Repeat,Description="Sequence repeat of more than 8x in the reference sequence">
+##FILTER=<ID=STRELKA_iHpol,Description="Indel overlaps an interupted homopolymer longer than 14x in the reference sequence">
+##FORMAT=<ID=STRELKA_DP2,Number=1,Type=Integer,Description="Read depth for tier2">
+##FORMAT=<ID=STRELKA_DP50,Number=1,Type=Float,Description="Average tier1 read depth within 50 bases">
+##FORMAT=<ID=STRELKA_FDP50,Number=1,Type=Float,Description="Average tier1 number of basecalls filtered from original read depth within 50 bases">
+##FORMAT=<ID=STRELKA_SUBDP50,Number=1,Type=Float,Description="Average number of reads below tier1 mapping quality threshold aligned across sites within 50 bases">
+##FORMAT=<ID=STRELKA_TAR,Number=2,Type=Integer,Description="Reads strongly supporting alternate allele for tiers 1,2">
+##FORMAT=<ID=STRELKA_TIR,Number=2,Type=Integer,Description="Reads strongly supporting indel allele for tiers 1,2">
+##FORMAT=<ID=STRELKA_TOR,Number=2,Type=Integer,Description="Other reads (weak support or insufficient indel breakpoint overlap) for tiers 1,2">
+##INFO=<ID=STRELKA_IC,Number=1,Type=Integer,Description="Number of times RU repeats in the indel allele">
+##INFO=<ID=STRELKA_IHP,Number=1,Type=Integer,Description="Largest reference interupted homopolymer length intersecting with the indel">
+##INFO=<ID=STRELKA_OVERLAP,Number=0,Type=Flag,Description="Somatic indel possibly overlaps a second indel.">
+##INFO=<ID=STRELKA_QSI,Number=1,Type=Integer,Description="Quality score for any somatic variant, ie. for the ALT haplotype to be present at a significantly different frequency in the tumor and normal">
+##INFO=<ID=STRELKA_QSI_NT,Number=1,Type=Integer,Description="Quality score reflecting the joint probability of a somatic variant and NT">
+##INFO=<ID=STRELKA_RC,Number=1,Type=Integer,Description="Number of times RU repeats in the reference allele">
+##INFO=<ID=STRELKA_RU,Number=1,Type=String,Description="Smallest repeating sequence unit in inserted or deleted sequence">
+##INFO=<ID=STRELKA_SVTYPE,Number=1,Type=String,Description="Type of structural variant">
+##INFO=<ID=STRELKA_TQSI,Number=1,Type=Integer,Description="Data tier used to compute QSI">
+##INFO=<ID=STRELKA_TQSI_NT,Number=1,Type=Integer,Description="Data tier used to compute QSI_NT">
+##content=strelka somatic indel calls
+##germlineIndelTheta=0.0001
+##priorSomaticIndelRate=1e-06

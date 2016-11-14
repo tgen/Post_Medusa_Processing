@@ -1,0 +1,129 @@
+#!/bin/bash
+#PBS -l nodes=1:ppn=4
+#PBS -N Post_Medusa_Processing
+#PBS -l walltime=24:00:00
+#PBS -j oe
+#PBS -o ${HOME}/STD_OUT/${PBS_JOBNAME}_${PBSNAME}_${PBS_JOBID}.out
+
+cd $PBS_O_WORKDIR
+
+JOBSDIR=/home/tgenref/pecan/post_central_pipe_processing/post_medusa_V1.0/jobScripts
+
+
+# Make Directories for Salmon and Kalliso
+
+ssh ${USER}@pnap-data2.tgen.org "mkdir -p /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/{${RNASAMPLEID}.salmonDir,${RNASAMPLEID}.kallistoDir}/{ensembl74_cDNA,ensembl74_GTF}"
+
+if [ $? -ne 0 ]
+then
+	rm Salmon_In_Progress 
+	rm Kallisto_In_Progress
+	rm ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/{ensembl74_cDNA,ensembl74_GTF}/Salmon_In_Progress
+	rm ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/{ensembl74_cDNA,ensembl74_GTF}/Kallisto_In_Progress
+	echo Failed to make Salmon and Kallisto directories for ${RNASAMPLEID} >> Salmon_Fail
+	echo Failed to make Salmon and Kallisto directories for ${RNASAMPLEID} >> Kallisto_Fail
+	echo Failed to make Salmon and Kallisto directories for ${RNASAMPLEID} | tee -a ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/{ensembl74_cDNA,ensembl74_GTF}/Salmon_Fail
+	echo Failed to make Salmon and Kallisto directories for ${RNASAMPLEID} | tee -a ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/{ensembl74_cDNA,ensembl74_GTF}/Kallisto_Fail
+	echo Failed to make Salmon and Kallisto directories for ${RNASAMPLEID} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
+	exit 1	
+fi
+
+# Rsync fastqs over to pnap
+
+for fastq in `grep "FQ=" ${PATIENT_NAME}.config | grep ${RNASAMPLEID} | cut -d, -f2 | sed "s|/scratch/mrussell/chiaPipe/runFolders|${FASTQDIR}|g" | sed "s|/scratch/akurdoglu/genFastqPipe/runFolders|${FASTQDIR}|g" | rev | cut -c 17- | rev `
+do
+        ssh ${USER}@pnap-data2.tgen.org "rsync ${fastq}_R1_001.fastq.gz /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/"
+
+        if [ "$?" -ne "0" ]
+        then
+		rm Salmon_In_Progress
+		rm Kallisto_In_Progress
+		rm ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/{ensembl74_cDNA,ensembl74_GTF}/Salmon_In_Progress
+		rm ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/{ensembl74_cDNA,ensembl74_GTF}/Kallisto_In_Progress
+		echo Failed to rsync a fastq over to pnap for ${RNASAMPLEID} >> Salmon_Fail
+		echo Failed to rsync a fastq over to pnap for ${RNASAMPLEID} >> Kallisto_Fail 
+		echo Failed to rsync a fastq over to pnap for ${RNASAMPLEID} | tee -a ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/{ensembl74_cDNA,ensembl74_GTF}/Salmon_Fail 
+		echo Failed to rsync a fastq over to pnap for ${RNASAMPLEID} | tee -a ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/{ensembl74_cDNA,ensembl74_GTF}/Kallisto_Fail
+		echo Failed to rsync a fastq over to pnap for ${RNASAMPLEID} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
+		exit 1
+        fi
+
+        ssh ${USER}@pnap-data2.tgen.org "rsync ${fastq}_R2_001.fastq.gz /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/"
+
+        if [ "$?" -ne "0" ]
+        then
+        	rm Salmon_In_Progress
+                rm Kallisto_In_Progress
+                rm ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/{ensembl74_cDNA,ensembl74_GTF}/Salmon_In_Progress
+                rm ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/{ensembl74_cDNA,ensembl74_GTF}/Kallisto_In_Progress
+                echo Failed to rsync a fastq over to pnap for ${RNASAMPLEID} >> Salmon_Fail
+                echo Failed to rsync a fastq over to pnap for ${RNASAMPLEID} >> Kallisto_Fail
+                echo Failed to rsync a fastq over to pnap for ${RNASAMPLEID} | tee -a ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/{ensembl74_cDNA,ensembl74_GTF}/Salmon_Fail
+                echo Failed to rsync a fastq over to pnap for ${RNASAMPLEID} | tee -a ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/{ensembl74_cDNA,ensembl74_GTF}/Kallisto_Fail
+                echo Failed to rsync a fastq over to pnap for ${RNASAMPLEID} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
+                exit 1
+	fi
+done
+
+
+### Start pbs jobs on pnap
+
+# Salmon cDNA
+
+DIR=/scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}
+
+ssh ${USER}@pnap-login1.tgen.org "cd ${DIR} ; qsub -v SAMPLE=${RNASAMPLEID},STARTDIR="${STARTDIR}",RNATYPE="${RNATYPE}",ASSAY="${ASSAY}",RNASAMPLEID="${RNASAMPLEID}",LIBTYPE="${LIBTYPE}",PATIENT_NAME="${PATIENT_NAME}",RNACHECK="${RNACHECK}" ${JOBSDIR}/salmon_cDNA.pbs " 
+
+if [ $? -ne 0 ]
+then
+	rm Salmon_In_Progress 
+	rm ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/ensembl74_cDNA/Salmon_In_Progress
+	echo Failed to start the salmon pbs job for ${RNASAMPLEID} >> Salmon_Fail
+	echo Failed to start the salmon pbs job for ${RNASAMPLEID} >> ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/ensembl74_cDNA/Salmon_Fail
+	echo Failed to start the salmon pbs job for ${RNASAMPLEID} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
+fi
+
+# Salmon GTF
+
+ssh ${USER}@pnap-login1.tgen.org "cd ${DIR} ; qsub -v SAMPLE=${RNASAMPLEID},STARTDIR="${STARTDIR}",RNATYPE="${RNATYPE}",ASSAY="${ASSAY}",RNASAMPLEID="${RNASAMPLEID}",LIBTYPE="${LIBTYPE}",PATIENT_NAME="${PATIENT_NAME}",RNACHECK="${RNACHECK}" ${JOBSDIR}/salmon_GTF.pbs "
+
+if [ $? -ne 0 ]
+then
+	rm Salmon_In_Progress
+	rm ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/ensembl74_GTF/Salmon_In_Progress
+	echo Failed to start the salmon pbs job for ${RNASAMPLEID} >> Salmon_Fail
+	echo Failed to start the salmon pbs job for ${RNASAMPLEID} >> ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/ensembl74_GTF/Salmon_Fail
+	echo Failed to start the salmon pbs job for ${RNASAMPLEID} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
+fi
+
+
+# Kallisto cDNA
+
+ssh ${USER}@pnap-login1.tgen.org "cd ${DIR} ; qsub -v SAMPLE=${RNASAMPLEID},STARTDIR="${STARTDIR}",RNATYPE="${RNATYPE}",ASSAY="${ASSAY}",RNASAMPLEID="${RNASAMPLEID}",LIBTYPE="${LIBTYPE}",PATIENT_NAME="${PATIENT_NAME}",RNACHECK="${RNACHECK}" ${JOBSDIR}/kallisto_cDNA.pbs "
+
+if [ $? -ne 0 ]
+then
+	rm Kallisto_In_Progress
+	rm ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/ensembl74_cDNA/Kallisto_In_Progress
+	echo Failed to start the kallisto pbs job for ${RNASAMPLEID} >> Kallisto_Fail
+	echo Failed to start the kallisto pbs job for ${RNASAMPLEID} >> ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/ensembl74_cDNA/Kallisto_Fail
+	echo Failed to start the kallisto pbs job for ${RNASAMPLEID} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
+fi
+
+# Kallisto GTF
+
+ssh ${USER}@pnap-login1.tgen.org "cd ${DIR} ; qsub -v SAMPLE=${RNASAMPLEID},STARTDIR="${STARTDIR}",RNATYPE="${RNATYPE}",ASSAY="${ASSAY}",RNASAMPLEID="${RNASAMPLEID}",LIBTYPE="${LIBTYPE}",PATIENT_NAME="${PATIENT_NAME}",RNACHECK="${RNACHECK}" ${JOBSDIR}/kallisto_GTF.pbs "
+
+if [ $? -ne 0 ]
+then
+	rm Kallisto_In_Progress
+	rm ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/ensembl74_GTF/Kallisto_In_Progress
+	echo Failed to start the kallisto pbs job for ${RNASAMPLEID} >> Kallisto_Fail
+	echo Failed to start the kallisto pbs job for ${RNASAMPLEID} >> ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/ensembl74_GTF/Kallisto_Fail
+	echo Failed to start the kallisto pbs job for ${RNASAMPLEID} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
+fi
+
+
+
+
+

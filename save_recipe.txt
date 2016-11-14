@@ -1,0 +1,2 @@
+cna=png,tsv,seg,baf.txt,merged.vcf.txt,cna.seg.vcf,val.vcf
+rna=

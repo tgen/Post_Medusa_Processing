@@ -1,0 +1,238 @@
+#!/bin/bash
+#PBS -l nodes=1:ppn=4
+#PBS -N Post_Medusa_Exome_Processing
+#PBS -l walltime=24:00:00
+#PBS -j oe
+#PBS -o ${HOME}/STD_OUT/${PBS_JOBNAME}_${PBSNAME}_${PBS_JOBID}.out
+
+cd $PBS_O_WORKDIR
+
+JOBSDIR=/home/tgenref/pecan/post_central_pipe_processing/post_medusa_V1.0/jobScripts
+
+# Make needed directories for exome
+
+#{{{
+
+if [ ${CNAONLY} = 0 ]
+then
+	# Make Directories and progress file for snpEFF
+	ssh ${USER}@pnap-data1.tgen.org "mkdir -p /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/vcfMerger/${EXOMEPAIR} ; touch /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/vcfMerger/${EXOMEPAIR}/snpEFF_on_merged_canonicalOnly_in_progress ; touch /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/vcfMerger/${EXOMEPAIR}/snpEFF_on_merged_allTranscripts_in_progress"
+
+	if [ $? -ne 0 ]
+	then
+		rm CNA_Manual_In_Progress
+		rm SnpEFF_ANN_In_Progress
+		rm vcfMerger/${EXOMEPAIR}/SnpEFF_ANN_In_Progress
+		rm cna_manual_2016/${EXOMEPAIR}_exo/CNA_Manual_In_Progress
+		echo Failed to create vcfmerger dir on pnap ${EXOMEPAIR} >> CNA_Manual_Fail
+		echo Failed to create vcfmerger dir on pnap ${EXOMEPAIR} >> SnpEFF_ANN_Fail
+		echo Failed to create vcfmerger dir on pnap ${EXOMEPAIR} >> vcfMerger/${EXOMEPAIR}/SnpEFF_ANN_Fail
+		echo Failed to create vcfmerger dir on pnap ${EXOMEPAIR} >> cna_manual_2016/${EXOMEPAIR}_exo/CNA_Manual_Fail
+		echo Failed to create vcfmerger dir on pnap ${EXOMEPAIR} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
+		exit 1
+	fi
+fi
+
+ssh ${USER}@pnap-data1.tgen.org "mkdir -p /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${EXOMEPAIR}_exo"
+
+if [ $? -ne 0 ]
+then
+	rm CNA_Manual_In_Progress
+        rm SnpEFF_ANN_In_Progress
+	rm vcfMerger/${EXOMEPAIR}/SnpEFF_ANN_In_Progress
+	rm cna_manual_2016/${EXOMEPAIR}_exo/CNA_Manual_In_Progress
+	echo Failed to create cna exo directory on pnap ${EXOMEPAIR} >> CNA_Manual_Fail
+        echo Failed to create cna exo directory on pnap ${EXOMEPAIR} >> SnpEFF_ANN_Fail
+	echo Failed to create cna exo directory on pnap ${EXOMEPAIR} >> vcfMerger/${EXOMEPAIR}/SnpEFF_ANN_Fail
+	echo Failed to create cna exo directory on pnap ${EXOMEPAIR} >> cna_manual_2016/${EXOMEPAIR}_exo/CNA_Manual_Fail
+	echo Failed to create cna exo directory on pnap ${EXOMEPAIR} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
+	exit 1
+fi
+
+#}}}
+
+# Rsync needed files over to pnap for re-annotation of merged VCF
+
+#{{{
+
+if [ ${CNAONLY} = 0 ]
+then
+
+	for VCF in `find ${STARTDIR}/${PATIENT_NAME}/vcfMerger/${EXOMEPAIR} -name "*.merged.allTranscripts*final.vcf"`
+	do
+		rsync ${VCF} ${VCF}.Original
+	done 
+
+	ssh ${USER}@pnap-data1.tgen.org "rsync ${STARTDIR}/${PATIENT_NAME}/vcfMerger/${EXOMEPAIR}/*.merged.allTranscripts*final.vcf /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/vcfMerger/${EXOMEPAIR}/ "
+
+	if [ $? -ne 0 ]
+	then
+		rm CNA_Manual_In_Progress
+        	rm SnpEFF_ANN_In_Progress
+        	rm vcfMerger/${EXOMEPAIR}/SnpEFF_ANN_In_Progress
+        	rm cna_manual_2016/${EXOMEPAIR}_exo/CNA_Manual_In_Progress
+		echo Failed to rsync merged.allTranscripts vcf to pnap ${EXOMEPAIR} >> CNA_Manual_Fail
+		echo Failed to rsync merged.allTranscripts vcf to pnap ${EXOMEPAIR} >> SnpEFF_ANN_Fail
+		echo Failed to rsync merged.allTranscripts vcf to pnap ${EXOMEPAIR} >> vcfMerger/${EXOMEPAIR}/SnpEFF_ANN_Fail
+		echo Failed to rsync merged.allTranscripts vcf to pnap ${EXOMEPAIR} >> cna_manual_2016/${EXOMEPAIR}_exo/CNA_Manual_Fail
+		echo Failed to rsync merged.allTranscripts vcf to pnap ${EXOMEPAIR} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
+		exit 1
+	fi
+
+	# Canonical Only Merged VCF
+	for VCF in `find ${STARTDIR}/${PATIENT_NAME}/vcfMerger/${EXOMEPAIR} -name "*.merged.canonicalOnly*final.vcf"`
+	do
+        	rsync ${VCF} ${VCF}.Original
+	done
+
+
+	ssh ${USER}@pnap-data1.tgen.org "rsync ${STARTDIR}/${PATIENT_NAME}/vcfMerger/${EXOMEPAIR}/*.merged.canonicalOnly*final.vcf /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/vcfMerger/${EXOMEPAIR}/ "
+
+	if [ $? -ne 0 ] 
+	then
+		rm CNA_Manual_In_Progress
+        	rm SnpEFF_ANN_In_Progress
+        	rm vcfMerger/${EXOMEPAIR}/SnpEFF_ANN_In_Progress
+        	rm cna_manual_2016/${EXOMEPAIR}_exo/CNA_Manual_In_Progress
+		echo Failed to rsync merged.canonicalOnly vcf to pnap ${EXOMEPAIR} >> CNA_Manual_Fail 
+		echo Failed to rsync merged.canonicalOnly vcf to pnap ${EXOMEPAIR} >> SnpEFF_ANN_Fail
+		echo Failed to rsync merged.canonicalOnly vcf to pnap ${EXOMEPAIR} >> vcfMerger/${EXOMEPAIR}/SnpEFF_ANN_Fail
+		echo Failed to rsync merged.canonicalOnly vcf to pnap ${EXOMEPAIR} >> cna_manual_2016/${EXOMEPAIR}_exo/CNA_Manual_Fail
+		echo Failed to rsync merged.canonicalOnly vcf to pnap ${EXOMEPAIR} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
+		exit 1
+	fi
+fi
+
+#}}}
+
+# Rsync needed files over to pnap for cna_manual_2016
+
+#{{{
+
+# Normal Dat
+
+ssh ${USER}@pnap-data1.tgen.org "rsync ${STARTDIR}/${PATIENT_NAME}/${NASSAY}/${NORMALSAMPLE}/${NORMALDAT} /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${EXOMEPAIR}_exo/ "
+
+if [ $? -ne 0 ]
+then
+	rm CNA_Manual_In_Progress
+        rm SnpEFF_ANN_In_Progress
+        rm vcfMerger/${EXOMEPAIR}/SnpEFF_ANN_In_Progress
+        rm cna_manual_2016/${EXOMEPAIR}_exo/CNA_Manual_In_Progress
+	echo Failed to rsync Normal Dat file to pnap ${EXOMEPAIR} >> CNA_Manual_Fail 
+	echo Failed to rsync Normal Dat file to pnap ${EXOMEPAIR} >> SnpEFF_ANN_Fail
+	echo Failed to rsync Normal Dat file to pnap ${EXOMEPAIR} >> vcfMerger/${EXOMEPAIR}/SnpEFF_ANN_Fail
+	echo Failed to rsync Normal Dat file to pnap ${EXOMEPAIR} >> cna_manual_2016/${EXOMEPAIR}_exo/CNA_Manual_Fail
+        echo Failed to rsync Normal Dat file to pnap ${EXOMEPAIR} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
+        exit 1
+fi
+
+# Tumor Dat
+ssh ${USER}@pnap-data1.tgen.org "rsync ${STARTDIR}/${PATIENT_NAME}/${TASSAY}/${TUMORSAMPLE}/${TUMORDAT} /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${EXOMEPAIR}_exo/ "
+
+if [ $? -ne 0 ]
+then
+	rm CNA_Manual_In_Progress
+        rm SnpEFF_ANN_In_Progress
+        rm vcfMerger/${EXOMEPAIR}/SnpEFF_ANN_In_Progress
+        rm cna_manual_2016/${EXOMEPAIR}_exo/CNA_Manual_In_Progress
+        echo Failed to rsync Tumor Dat file to pnap ${EXOMEPAIR} >> CNA_Manual_Fail               
+        echo Failed to rsync Tumor Dat file to pnap ${EXOMEPAIR} >> SnpEFF_ANN_Fail
+        echo Failed to rsync Tumor Dat file to pnap ${EXOMEPAIR} >> vcfMerger/${EXOMEPAIR}/SnpEFF_ANN_Fail
+        echo Failed to rsync Tumor Dat file to pnap ${EXOMEPAIR} >> cna_manual_2016/${EXOMEPAIR}_exo/CNA_Manual_Fail
+        echo Failed to rsync Tumor Dat file to pnap ${EXOMEPAIR} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
+        exit 1
+fi
+
+# Normal HS Metrics
+ssh ${USER}@pnap-data1.tgen.org "rsync ${STARTDIR}/${PATIENT_NAME}/stats/${NORMALSAMPLE}.proj.md.jr.bam.picHSMetrics /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${EXOMEPAIR}_exo/ "
+if [ $? -ne 0 ]
+then
+	rm CNA_Manual_In_Progress
+        rm SnpEFF_ANN_In_Progress
+        rm vcfMerger/${EXOMEPAIR}/SnpEFF_ANN_In_Progress
+        rm cna_manual_2016/${EXOMEPAIR}_exo/CNA_Manual_In_Progress
+	echo Failed to rsync Normal HS metrics file tp pnap ${EXOMEPAIR} >> CNA_Manual_Fail
+	echo Failed to rsync Normal HS metrics file tp pnap ${EXOMEPAIR} >> SnpEFF_ANN_Fail
+        echo Failed to rsync Normal HS metrics file tp pnap ${EXOMEPAIR} >> vcfMerger/${EXOMEPAIR}/SnpEFF_ANN_Fail
+        echo Failed to rsync Normal HS metrics file tp pnap ${EXOMEPAIR} >> cna_manual_2016/${EXOMEPAIR}_exo/CNA_Manual_Fail
+        echo Failed to rsync Normal HS metrics file tp pnap ${EXOMEPAIR} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
+        exit 1
+fi
+
+# Tumor HS Metrics
+ssh ${USER}@pnap-data1.tgen.org "rsync ${STARTDIR}/${PATIENT_NAME}/stats/${TUMORSAMPLE}.proj.md.jr.bam.picHSMetrics /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${EXOMEPAIR}_exo/ "
+if [ $? -ne 0 ]
+then
+	rm CNA_Manual_In_Progress
+        rm SnpEFF_ANN_In_Progress
+        rm vcfMerger/${EXOMEPAIR}/SnpEFF_ANN_In_Progress
+        rm cna_manual_2016/${EXOMEPAIR}_exo/CNA_Manual_In_Progress
+        echo Failed to rsync Tumor HS metrics file to pnap ${EXOMEPAIR} >> CNA_Manual_Fail
+	echo Failed to rsync Tumor HS metrics file to pnap ${EXOMEPAIR} >> SnpEFF_ANN_Fail
+        echo Failed to rsync Tumor HS metrics file to pnap ${EXOMEPAIR} >> vcfMerger/${EXOMEPAIR}/SnpEFF_ANN_Fail
+        echo Failed to rsync Tumor HS metrics file to pnap ${EXOMEPAIR} >> cna_manual_2016/${EXOMEPAIR}_exo/CNA_Manual_Fail
+        echo Failed to rsync Tumor HS metrics file to pnap ${EXOMEPAIR} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
+        exit 1
+fi
+
+# Exome HC VCF
+ssh ${USER}@pnap-data1.tgen.org "rsync ${STARTDIR}/${PATIENT_NAME}/hc/${EXOMEPAIR}/${EXOMEPAIR}.HC_All.snpEff.vcf /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${EXOMEPAIR}_exo/ "
+        
+if [ $? -ne 0 ]
+then
+	rm CNA_Manual_In_Progress
+        rm SnpEFF_ANN_In_Progress
+        rm vcfMerger/${EXOMEPAIR}/SnpEFF_ANN_In_Progress
+        rm cna_manual_2016/${EXOMEPAIR}_exo/CNA_Manual_In_Progress
+        echo Failed to rsync HC VCF file to pnap ${EXOMEPAIR} >> CNA_Manual_Fail 
+	echo Failed to rsync HC VCF file to pnap ${EXOMEPAIR} >> SnpEFF_ANN_Fail
+	echo Failed to rsync HC VCF file to pnap ${EXOMEPAIR} >> vcfMerger/${EXOMEPAIR}/SnpEFF_ANN_Fail
+	echo Failed to rsync HC VCF file to pnap ${EXOMEPAIR} >> cna_manual_2016/${EXOMEPAIR}_exo/CNA_Manual_Fail
+        echo Failed to rsync HC VCF file to pnap ${EXOMEPAIR}| mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
+        exit 1
+fi
+
+#}}}
+
+### Start pbs jobs on PNAP
+
+#{{{
+
+if [ ${CNAONLY} = 0 ]
+then
+	DIR=/scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/vcfMerger/${EXOMEPAIR}
+
+	ssh ${USER}@pnap-login1.tgen.org "cd ${DIR} ; qsub -v DIR=${DIR},STARTDIR="${STARTDIR}",EXOMEPAIR=${EXOMEPAIR},PATIENT_NAME="${PATIENT_NAME}",PAIR="${EXOMEPAIR}",TUMOR="${TUMORSAMPLE}",EXOMEPAIRS=${EXOMEPAIRS} ${JOBSDIR}/snpEFF_strip_EFF_add_ANN_for_results_rename.pbs "
+
+	if [ $? -ne 0 ]
+	then
+	        rm CNA_Manual_In_Progress
+	        rm SnpEFF_ANN_In_Progress
+	        rm vcfMerger/${EXOMEPAIR}/SnpEFF_ANN_In_Progress
+	        rm cna_manual/${EXOMEPAIR}_exo/CNA_Manual_In_Progress
+	        echo Failed to Start SnpEFF qsub job for ${EXOMEPAIR} >> CNA_Manual_Fail
+	        echo Failed to Start SnpEFF qsub job for ${EXOMEPAIR} >> SnpEFF_ANN_Fail
+	        echo Failed to Start SnpEFF qsub job for ${EXOMEPAIR} >> vcfMerger/${EXOMEPAIR}/SnpEFF_ANN_Fail
+	        echo Failed to Start SnpEFF qsub job for ${EXOMEPAIR} >> cna_manual/${EXOMEPAIR}_exo/CNA_Manual_Fail
+	        echo Failed to Start SnpEFF qsub job for ${EXOMEPAIR} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
+	        exit 1
+	fi
+fi
+
+DIR=/scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${EXOMEPAIR}_exo
+
+ssh ${USER}@pnap-login1.tgen.org "cd ${DIR} ; qsub -v EXOMEPAIR=${EXOMEPAIR},BEDFILE=${BEDFILE},STARTDIR="${STARTDIR}",PATIENT_NAME="${PATIENT_NAME}",DIR=${DIR},NORMALSAMPLE=${NORMALSAMPLE},TUMORSAMPLE=${TUMORSAMPLE},CNAEXOMETARGET=${CNAEXOMETARGET},USER=${USER},VCF="${EXOMEPAIR}.HC_All.snpEff.vcf",NORMALDAT="${NORMALSAMPLE}.proj.md.jr.bam.clc.cln.dat",TUMORDAT="${TUMORSAMPLE}.proj.md.jr.bam.clc.cln.dat",OFILE=${EXOMEPAIR},EXPECTEDPAIRS=${EXPECTEDPAIRS} ${JOBSDIR}/ngs_cna2015_Exo_V3.pbs "
+
+if [ $? -ne 0 ]
+then
+        rm CNA_Manual_In_Progress
+        rm cna_manual_2016/${EXOMEPAIR}_exo/CNA_Manual_In_Progress
+        echo Failed to Start cna_manual exo qsub job for ${EXOMEPAIR} >> CNA_Manual_Fail
+        echo Failed to Start cna_manual exo qsub job for ${EXOMEPAIR} >> cna_manual_2016/${EXOMEPAIR}_exo/CNA_Manual_Fail
+        echo Failed to Start cna_manual exo qsub job for ${EXOMEPAIR} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
+        exit 1
+fi
+
+#}}}
+
