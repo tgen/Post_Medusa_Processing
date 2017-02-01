@@ -30,9 +30,27 @@ fi
 
 # Rsync fastqs over to pnap
 
-for fastq in `grep "FQ=" ${PATIENT_NAME}.config | grep ${RNASAMPLEID} | cut -d, -f2 | sed "s|/scratch/mrussell/chiaPipe/runFolders|${FASTQDIR}|g" | sed "s|/scratch/akurdoglu/genFastqPipe/runFolders|${FASTQDIR}|g" | rev | cut -c 17- | rev `
+LINKFLAG=0
+
+for FASTQ in `grep "FQ=" ${PATIENT_NAME}.config | grep ${RNASAMPLEID} | cut -d, -f2 | rev | cut -c 17- | rev `
 do
-        ssh ${USER}@pnap-data2.tgen.org "rsync ${fastq}_R1_001.fastq.gz /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/"
+	ssh ${USER}@pnap-data2.tgen.org " if [ ! -f ${FASTQ}_R1_001.fastq.gz ] ; then exit 1 ; fi "	
+
+	if [ $? -ne 0 ]
+	then
+		fastq=`echo ${FASTQ} sed "s|/scratch/mrussell/chiaPipe/runFolders|${FASTQDIR}|g" | sed "s|/scratch/akurdoglu/genFastqPipe/runFolders|${FASTQDIR}|g" | sed "s|/scratch/tgenjetstream/chiaPipe/runFolders|${FASTQDIR}|g" `
+		LINKFLAG=1
+	else
+		fastq=$FASTQ
+		fastqBASE=`basename $fastq `
+	fi
+
+	if [ $LINKFLAG -ne 0 ]
+	then
+        	ssh ${USER}@pnap-data2.tgen.org " rsync ${fastq}_R1_001.fastq.gz /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/"
+	else
+		ssh ${USER}@pnap-data2.tgen.org " ln -s ${fastq}_R1_001.fastq.gz /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${fastqBASE}_R1_001.fastq.gz "
+	fi
 
         if [ "$?" -ne "0" ]
         then
@@ -48,7 +66,12 @@ do
 		exit 1
         fi
 
-        ssh ${USER}@pnap-data2.tgen.org "rsync ${fastq}_R2_001.fastq.gz /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/"
+	if [ $LINKFLAG -ne 0 ]
+        then
+                ssh ${USER}@pnap-data2.tgen.org " rsync ${fastq}_R2_001.fastq.gz /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/"
+        else
+                ssh ${USER}@pnap-data2.tgen.org " ln -s ${fastq}_R2_001.fastq.gz /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${fastqBASE}_R2_001.fastq.gz "
+        fi
 
         if [ "$?" -ne "0" ]
         then

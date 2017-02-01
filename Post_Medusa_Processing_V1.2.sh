@@ -9,7 +9,7 @@
 ## Warning     - This script must be run from the results directory on a box that 
 ##               has qsub (merckx).
 ##
-## Description - Depending on options used this script will loop through 
+## Description - Depending on options used, this script will loop through 
 ##               new "*ps*" time stamped results directories renaming them, copying 
 ##               files over to pnap for reduing snpEFF with updated databases and 
 ##               tool versions as well as starting the advanced cna scripts.
@@ -111,7 +111,7 @@ do
         esac
 done
 
-#}}}
+#}}} 
 
 # Post Processing Variables
 
@@ -259,6 +259,32 @@ do
 			find . -name Salmon_Fail -exec rm {} \;
 			find . -name Kallisto_Fail -exec rm {} \;
 		fi
+		
+		# Remove delly directory and progress tags
+
+		if [ ${CNAONLY} = 0 ]
+                then
+
+			if [ -d delly ]
+                	then
+                	        rm -rf delly
+                	fi
+		
+			if [ -f Delly_In_Progress ]
+                	then
+                	        rm -rf Delly_In_Progress
+                	fi
+	
+			if [ -f Delly_Fail ]
+                	then
+                	        rm -rf Delly_Fail
+                	fi
+			
+			if [ -f Delly_Complete ]
+                	then
+                	        rm -rf Delly_Complete
+                	fi
+		fi
 	fi
 
 	#}}}
@@ -341,6 +367,7 @@ do
 			if [ ${CNAONLY} = 0 ]
 			then
 	                	touch SnpEFF_ANN_Complete
+				touch Delly_Complete
 			fi
 	        else
 	                # Find out if there are any exome DNA pair lines. If none then skip snpEff and CNA launcher
@@ -592,6 +619,7 @@ do
 	                                                GENOMEPAIR="${NORMALSAMPLEG}-${TUMORSAMPLEG}"
 	                                                NASSAY="`echo ${NORMALSAMPLEG} | cut -d_ -f7`"
 	                                                TASSAY="`echo ${TUMORSAMPLEG} | cut -d_ -f7`"
+							DELLY="No"
 	
         	                                        mkdir cna_manual_2016/${GENOMEPAIR}_filt2012
         	                                        touch cna_manual_2016/${GENOMEPAIR}_filt2012/CNA_Manual_In_Progress
@@ -600,7 +628,7 @@ do
         	                                        mkdir cna_manual_2016/${GENOMEPAIR}_unfi
         	                                        touch cna_manual_2016/${GENOMEPAIR}_unfi/CNA_Manual_In_Progress
 	
-        	                                        qsub -v PBSNAME=${GENOMEPAIR},BEDFILE=${bedFile},STARTDIR="${STARTDIR}",GENOMEPAIR=${GENOMEPAIR},EXOMEPAIR=${EXOMEPAIR},NORMALSAMPLEG="${NORMALSAMPLEG}",TUMORSAMPLEG="${TUMORSAMPLEG}",NASSAY="${NASSAY}",TASSAY="${TASSAY}",LIBTYPE="${LIBTYPE}",PATIENT_NAME="${PATIENT_NAME}",NORMALSAMPLE="${NORMALSAMPLE}",TUMORSAMPLE="${TUMORSAMPLE}",VCF="${VCF}",NORMALDAT="${NORMALDAT}",TUMORDAT="${TUMORDAT}",EXPECTEDPAIRS=${EXPECTEDPAIRSLIST} ${GENOMEPBS}
+        	                                        qsub -v PBSNAME=${GENOMEPAIR},DELLY=${DELLY},BEDFILE=${bedFile},STARTDIR="${STARTDIR}",GENOMEPAIR=${GENOMEPAIR},EXOMEPAIR=${EXOMEPAIR},NORMALSAMPLEG="${NORMALSAMPLEG}",TUMORSAMPLEG="${TUMORSAMPLEG}",NASSAY="${NASSAY}",TASSAY="${TASSAY}",LIBTYPE="${LIBTYPE}",PATIENT_NAME="${PATIENT_NAME}",NORMALSAMPLE="${NORMALSAMPLE}",TUMORSAMPLE="${TUMORSAMPLE}",VCF="${VCF}",NORMALDAT="${NORMALDAT}",TUMORDAT="${TUMORDAT}",EXPECTEDPAIRS=${EXPECTEDPAIRSLIST} ${GENOMEPBS}
 
         	                                        if [ $? -ne 0 ]
         	                                        then
@@ -622,86 +650,148 @@ do
         	                        fi
         	                done
         	        fi
+
+			# Start Delly
+
+			if [ ${CNAONLY} = 0 ]
+                        then
+				LICOUNT=0
+	                        LIPAIRS=()
+				EXPECTEDPAIRS=()
+
+	                        for PAIRTEST in `grep "DNAPAIR=" ${PATIENT_NAME}.config`
+        	                do
+                	        	NORM=`echo ${PAIRTEST} | awk -F"[=,]" '{print $2}'`
+                	                TUMR=`echo ${PAIRTEST} | awk -F"[=,]" '{print $3}'`
+
+                	                NORMTYPE=`grep "SAMPLE=.*${NORM}" ${PATIENT_NAME}.config | awk -F',' '{ print $3 }'`
+                	                TUMRTYPE=`grep "SAMPLE=.*${TUMR}" ${PATIENT_NAME}.config | awk -F',' '{ print $3 }'`
+
+                	                if [ ${NORMTYPE} = "Genome" ] && [ ${TUMRTYPE} = "Genome" ]
+                	                then
+                	                	((LICOUNT+=1))
+                	                        LIPAIRS+=("${NORM}-${TUMR}")
+						EXPECTEDPAIRS+=("${NORM}-${TUMR}")
+                	                fi
+                	        done
+
+				if [ ${LICOUNT} = 0 ]
+                        	then
+                        	        echo ${PATIENT_NAME} has no LI DNA pair lines. Skipping delly.
+                        	        touch Delly_Complete
+
+	                        else
+					mkdir delly
+					touch Delly_In_Progress	
+	
+					EXPECTEDPAIRSLIST=`echo ${EXPECTEDPAIRS[@]} | sed 's/\s/@/g'`
+
+					for GPAIR in `echo ${LIPAIRS[@]} | sed 's/\s/\n/g'`
+        		                do
+                		        	NORMALSAMPLEG="`echo ${GPAIR} | cut -d- -f1`"
+                        		        TUMORSAMPLEG="`echo ${GPAIR} | cut -d- -f2`"
+                                		GENOMEPAIR="${NORMALSAMPLEG}-${TUMORSAMPLEG}"
+						NASSAY="`echo ${NORMALSAMPLEG} | cut -d_ -f7`"
+                                                TASSAY="`echo ${TUMORSAMPLEG} | cut -d_ -f7`"
+						DELLY="Yes"
+
+						mkdir delly/${GENOMEPAIR}
+						touch delly/${GENOMEPAIR}/Delly_In_Progress
+						
+                                                qsub -v PBSNAME=${GENOMEPAIR},DELLY=${DELLY},STARTDIR="${STARTDIR}",NASSAY="${NASSAY}",TASSAY="${TASSAY}",GENOMEPAIR=${GENOMEPAIR},NORMALSAMPLEG="${NORMALSAMPLEG}",TUMORSAMPLEG="${TUMORSAMPLEG}",PATIENT_NAME="${PATIENT_NAME}",EXPECTEDPAIRS=${EXPECTEDPAIRSLIST} ${GENOMEPBS}
+
+                                                if [ $? -ne 0 ]
+                                                then
+							rm Delly_In_Progress
+							rm delly/${GENOMEPAIR}/Delly_In_Progress
+							echo Failed to start rsync qsub job for ${GENOMEPAIR} >> Delly_Fail
+							echo Failed to start rsync qsub job for ${GENOMEPAIR} >> delly/${GENOMEPAIR}/Delly_Fail
+                                                fi
+                                	done
+				fi
+			fi	
         	fi
 	
-	
 		# Start Salmon and Kallisto if RNA is available
-
+		
+		#{{{
+		
 		if [ ${CNAONLY} = 0 ]
 		then
-
-        	RNACOUNT="`grep "SAMPLE=.*,RNA," ${PATIENT_NAME}.config | wc -l`"
+			RNACOUNT="`grep "SAMPLE=.*,RNA," ${PATIENT_NAME}.config | wc -l`"
 	
-	        if [ ${RNACOUNT} = 0 ]
-	        then
-	        	echo ${PATIENT_NAME} has no RNA.
-	                touch Salmon_Complete
-	                touch Kallisto_Complete
-		else
-	        	touch Salmon_In_Progress
-	                touch Kallisto_In_Progress
+	        	if [ ${RNACOUNT} = 0 ]
+	        	then
+	        		echo ${PATIENT_NAME} has no RNA.
+	        	        touch Salmon_Complete
+	        	        touch Kallisto_Complete
+			else
+	        		touch Salmon_In_Progress
+	        	        touch Kallisto_In_Progress
 	
-	                # Make list of all RNA samples for final copy back check
+	        	        # Make list of all RNA samples for final copy back check
 
-	                RNACHECK=()
+	        	        RNACHECK=()
 
-	                for RNALIST in `grep "SAMPLE=.*,RNA," ${PATIENT_NAME}.config`
-	                do
-	        	        ASSAY="`echo ${RNALIST} | awk -F"[=,]" '{print $2}'`"
-	                        RNASAMPLEID="`echo ${RNALIST} | awk -F"[=,]" '{print $3}'`"
-	                        RNACHECK+=("${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}")
-	                done
+	                	for RNALIST in `grep "SAMPLE=.*,RNA," ${PATIENT_NAME}.config`
+	                	do
+	        		        ASSAY="`echo ${RNALIST} | awk -F"[=,]" '{print $2}'`"
+	                	        RNASAMPLEID="`echo ${RNALIST} | awk -F"[=,]" '{print $3}'`"
+	                	        RNACHECK+=("${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}")
+	                	done
 
-	                RNACHECKLIST=`echo ${RNACHECK[@]} | sed 's/\s/@/g'`
+	                	RNACHECKLIST=`echo ${RNACHECK[@]} | sed 's/\s/@/g'`
 
-	                echo $RNACHECKLIST
+	                	echo $RNACHECKLIST
 
-	                for RNASAMPLE in `grep "SAMPLE=.*,RNA," ${PATIENT_NAME}.config`
-	                do
-	         		LIBTYPE="RNA"
-	                        ASSAY="`echo ${RNASAMPLE} | awk -F"[=,]" '{print $2}'`"
-	                       	STUDY="`echo ${PATIENT_NAME} | awk -F'_' '{print $1}'`"
-	                       	RNASAMPLEID="`echo ${RNASAMPLE} | awk -F"[=,]" '{print $3}'`"
-				
-				if [ ${RESTART} == 1 ]
-				then
-					if [ -d ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir ]
+	                	for RNASAMPLE in `grep "SAMPLE=.*,RNA," ${PATIENT_NAME}.config`
+	                	do
+	         			LIBTYPE="RNA"
+	                	        ASSAY="`echo ${RNASAMPLE} | awk -F"[=,]" '{print $2}'`"
+	                	       	STUDY="`echo ${PATIENT_NAME} | awk -F'_' '{print $1}'`"
+	                	       	RNASAMPLEID="`echo ${RNASAMPLE} | awk -F"[=,]" '{print $3}'`"
+					
+					if [ ${RESTART} == 1 ]
 					then
-				       		rm -rf ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir	                       
-					fi
+						if [ -d ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir ]
+						then
+					       		rm -rf ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir	                       
+						fi
 
-					if [ -d ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir ]
-					then
-						rm -rf ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir
-					fi
- 				fi
+						if [ -d ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir ]
+						then
+							rm -rf ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir
+						fi
+ 					fi
 
-			        mkdir -p ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/{ensembl74_cDNA,ensembl74_GTF}
-	                        mkdir -p ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/{ensembl74_cDNA,ensembl74_GTF}
-	                        touch ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/{ensembl74_cDNA,ensembl74_GTF}/Salmon_In_Progress
-	                        touch ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/{ensembl74_cDNA,ensembl74_GTF}/Kallisto_In_Progress
+			        	mkdir -p ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/{ensembl74_cDNA,ensembl74_GTF}
+	                        	mkdir -p ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/{ensembl74_cDNA,ensembl74_GTF}
+	                        	touch ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/{ensembl74_cDNA,ensembl74_GTF}/Salmon_In_Progress
+	                        	touch ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/{ensembl74_cDNA,ensembl74_GTF}/Kallisto_In_Progress
+	
+		                        # Will need code to get fastq directory and library type of RNA library for salmon      
 
-	                        # Will need code to get fastq directory and library type of RNA library for salmon      
+		                        FASTQDIR="`grep "${STUDY}_STUDY=" ${CONSTANTS} | cut -d= -f2 | tr -d '\n'`"
+		                        RNATYPE="`grep "${ASSAY}_SALMONlibType=" ${CONSTANTS} | cut -d= -f2 | tr -d '\n'`"
+	
+		                        qsub -v PBSNAME=${RNASAMPLEID},STARTDIR="${STARTDIR}",RNATYPE="${RNATYPE}",USER="${USER}",ASSAY="${ASSAY}",FASTQDIR="${FASTQDIR}",RNASAMPLEID="${RNASAMPLEID}",PATIENT_NAME="${PATIENT_NAME}",LIBTYPE="${LIBTYPE}",RNACHECK=${RNACHECKLIST} ${RNAPBS}
 
-	                        FASTQDIR="`grep "${STUDY}_STUDY=" ${CONSTANTS} | cut -d= -f2 | tr -d '\n'`"
-	                        RNATYPE="`grep "${ASSAY}_SALMONlibType=" ${CONSTANTS} | cut -d= -f2 | tr -d '\n'`"
-
-	                        qsub -v PBSNAME=${RNASAMPLEID},STARTDIR="${STARTDIR}",RNATYPE="${RNATYPE}",USER="${USER}",ASSAY="${ASSAY}",FASTQDIR="${FASTQDIR}",RNASAMPLEID="${RNASAMPLEID}",PATIENT_NAME="${PATIENT_NAME}",LIBTYPE="${LIBTYPE}",RNACHECK=${RNACHECKLIST} ${RNAPBS}
-
-	                        if [ $? -ne 0 ]
-	                        then
-	                		rm Salmon_In_Progress
-	                                rm Kallisto_In_Progress
-	                                rm ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/{ensembl74_cDNA,ensembl74_GTF}/Salmon_In_Progress
-	                                rm ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/{ensembl74_cDNA,ensembl74_GTF}/Kallisto_In_Progress
-	                                echo Failed to start rsync qsub job for ${RNASAMPLEID} >> Salmon_Fail
-	                                echo Failed to start rsync qsub job for ${RNASAMPLEID} >> Kallisto_Fail
-	                                echo Failed to start rsync qsub job for ${RNASAMPLEID} | tee -a ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/{ensembl74_cDNA,ensembl74_GTF}/Salmon_Fail
-	                                echo Failed to start rsync qsub job for ${RNASAMPLEID} | tee -a ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/{ensembl74_cDNA,ensembl74_GTF}/Kallisto_Fail
-	                        fi
-	                done
+		                        if [ $? -ne 0 ]
+		                        then
+		                		rm Salmon_In_Progress
+		                                rm Kallisto_In_Progress
+		                                rm ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/{ensembl74_cDNA,ensembl74_GTF}/Salmon_In_Progress
+		                                rm ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/{ensembl74_cDNA,ensembl74_GTF}/Kallisto_In_Progress
+		                                echo Failed to start rsync qsub job for ${RNASAMPLEID} >> Salmon_Fail
+		                                echo Failed to start rsync qsub job for ${RNASAMPLEID} >> Kallisto_Fail
+		                                echo Failed to start rsync qsub job for ${RNASAMPLEID} | tee -a ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/{ensembl74_cDNA,ensembl74_GTF}/Salmon_Fail
+		                                echo Failed to start rsync qsub job for ${RNASAMPLEID} | tee -a ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/{ensembl74_cDNA,ensembl74_GTF}/Kallisto_Fail
+		                        fi
+		                done
+			fi
 		fi
-		fi
+		#}}}
+	
 	fi
 done
 
