@@ -161,6 +161,7 @@
 @@tgen06@@USCP_STUDY=/carpten/fastq_DoNotTouch/
 @@tgen06@@A1MRS_SALMONlibType=ISR
 @@tgen06@@KBMRS_SALMONlibType=ISR
+@@tgen06@@KHMRS_SALMONlibType=ISR
 @@tgen06@@KRSOD_SALMONlibType=ISR
 @@tgen06@@KTSRK_SALMONlibType=ISR
 @@tgen06@@OHFSK_SALMONlibType=ISR

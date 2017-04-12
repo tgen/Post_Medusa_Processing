@@ -105,7 +105,7 @@ else
 			for RSAMPLE in \`echo ${RNACHECK} |sed 's/@/\n/g'\`
 			do
 				echo ${STARTDIR}/${PATIENT_NAME}/\${RSAMPLE}.salmonDir/ensembl74_cDNA/Salmon_Complete
-				if [ ! -f ${STARTDIR}/${PATIENT_NAME}/\${RSAMPLE}.salmonDir/ensembl74_cDNA/Salmon_Complete ] || [ ! -f ${STARTDIR}/${PATIENT_NAME}/\${RSAMPLE}.salmonDir/ensembl74_GTF/Salmon_Complete ]
+				if [ ! -f ${STARTDIR}/${PATIENT_NAME}/\${RSAMPLE}.salmonDir/ensembl74_cDNA/Salmon_Complete ] || [ ! -f ${STARTDIR}/${PATIENT_NAME}/\${RSAMPLE}.salmonDir/ensembl74_GTF/Salmon_Complete ] || [ ! -f ${STARTDIR}/${PATIENT_NAME}/\${RSAMPLE}.salmonDir/ensembl74_GTF_V7.2/Salmon_Complete ]
 				then
 					COMPLETE=1
 				fi

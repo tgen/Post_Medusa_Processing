@@ -32,6 +32,7 @@
 ##				Depending on the other options you use [-p|-r|-R] this could have unintended
 ##                              side effects.
 ##	-c	Used with the -R and -l option to only restart Copy Number analysis. 
+##	-m	Used with the -R and -l option to only restart vcfMerger using the pegasus pipe protocol.
 ##				
 ##
 ####################################################################
@@ -54,8 +55,9 @@ RESTART=0
 RMBLOAT=no
 POSTPROCESSING=0
 CNAONLY=0
+MERGERONLY=0
 
-while getopts ":rRb:l:pc" opt
+while getopts ":rRb:l:pcm" opt
 do
         case $opt in
                 r)
@@ -91,6 +93,8 @@ do
                         fi ;;
 		c)
 			CNAONLY=1 ;;
+		m)
+			MERGERONLY=1 ;;
                 l)
                         DIRLIST=$OPTARG
                         if [ ! -f $DIRLIST ] ; then
@@ -111,7 +115,17 @@ do
         esac
 done
 
-#}}} 
+# Test if more than one ONLY option is used
+
+if [ ${MERGERONLY} == 1 ] && [ ${CNAONLY} == 1 ]
+then
+	echo
+	echo You can only use one ONLY option at a time.
+	echo Please choose which one you want to use and try again.
+	exit 1
+fi
+
+#}}}  
 
 # Post Processing Variables
 
@@ -216,7 +230,7 @@ do
 
 	#{{{
 
-	if [ ${RESTART} == 1 ]
+	if [ ${RESTART} == 1 ] && [ ${MERGERONLY} == 0 ]
 	then
 		# Remove cna_manual directory
 		if [ -d cna_manual_2016 ] 
@@ -242,11 +256,27 @@ do
 
 		# Remove SnpEFF progress tags
 		
-		if [ ${CNAONLY} = 0 ]
+		if [ ${CNAONLY} = 0 ] 
 		then
-			find . -name SnpEFF_ANN_Complete -exec rm {} \;
-			find . -name SnpEFF_ANN_In_Progress -exec rm {} \;
-			find . -name SnpEFF_ANN_Fail -exec rm {} \;
+			if [ -d vcfMerger_pegasus ]
+			then
+				rm -rf vcfMerger_pegasus
+			fi
+			
+			if [ -f SnpEFF_ANN_Complete ]
+			then
+				rm SnpEFF_ANN_Complete
+			fi 
+
+			if [ -f SnpEFF_ANN_In_Progress ]
+                        then
+				rm SnpEFF_ANN_In_Progress
+                        fi
+
+			if [ -f SnpEFF_ANN_Fail ]
+                        then
+				rm SnpEFF_ANN_Fail
+                        fi
 		fi		
 
 		# Remove salmon and Kallisto tags
@@ -287,6 +317,29 @@ do
 		fi
 	fi
 
+	if [ ${MERGERONLY} == 1 ]
+	then
+		if [ -d vcfMerger_pegasus ]
+                then
+                	rm -rf vcfMerger_pegasus
+                fi
+
+                if [ -f SnpEFF_ANN_Complete ]
+                then
+                	rm SnpEFF_ANN_Complete
+                fi
+
+                if [ -f SnpEFF_ANN_In_Progress ]
+                then
+                	rm SnpEFF_ANN_In_Progress
+                fi
+
+                if [ -f SnpEFF_ANN_Fail ]
+                then
+                	rm SnpEFF_ANN_Fail
+                fi
+	fi
+
 	#}}}
 
 	# Remove bloat folders that keats lab does not use or is now redundant
@@ -305,7 +358,7 @@ do
                 fi
 	fi
 
-	#}}}	
+	#}}}	 
 
 	# Rename Directories to make compatible with KBase import
 
@@ -349,7 +402,7 @@ do
 		cd ${PATIENT_NAME}
 	fi
 
-	#}}}
+	#}}} 
 
 	# Start PostProcessing or Restart if flag was set
 
@@ -359,7 +412,7 @@ do
 		
 		DNAPAIRCOUNT="`grep "DNAPAIR=" ${PATIENT_NAME}.config | wc -l`"
 
-		if [ ${DNAPAIRCOUNT} = 0 ]
+		if [ ${DNAPAIRCOUNT} = 0 ] && [ ${MERGERONLY} == 0 ]
 	        then
 	        	echo ${PATIENT_NAME} has no DNA pair lines. Skipping snpEff and CNA launcher.
 	                touch CNA_Manual_Complete
@@ -369,6 +422,10 @@ do
 	                	touch SnpEFF_ANN_Complete
 				touch Delly_Complete
 			fi
+		elif [ ${DNAPAIRCOUNT} = 0 ] && [ ${MERGERONLY} == 1 ]
+		then
+			echo ${PATIENT_NAME} has no DNA pair lines. Skipping snpEff launcher.
+			touch SnpEFF_ANN_Complete
 	        else
 	                # Find out if there are any exome DNA pair lines. If none then skip snpEff and CNA launcher
 
@@ -424,7 +481,7 @@ do
 			
 			#}}}
 
-			if [ ${EXOMECOUNT} = 0 ]
+			if [ ${EXOMECOUNT} = 0 ] && [ ${MERGERONLY} = 0 ]
                 	then
                 		echo ${PATIENT_NAME} has no Exome DNA pair lines. Skipping snpEff and CNA launcher.
                 	        touch CNA_Manual_Complete
@@ -433,90 +490,23 @@ do
 				then
                 	        	touch SnpEFF_ANN_Complete
 				fi
+			elif [ ${EXOMECOUNT} = 0 ] && [ ${MERGERONLY} == 1 ]
+			then
+				echo ${PATIENT_NAME} has no Exome DNA pair lines. Skipping snpEff launcher.
+				touch SnpEFF_ANN_Complete
                 	else
-                	        mkdir cna_manual_2016
-                	        touch CNA_Manual_In_Progress
-                	        
-				if [ ${CNAONLY} = 0 ]
+				if [ ${MERGERONLY} = 0 ]
 				then
+                	        	mkdir cna_manual_2016
+                	        	touch CNA_Manual_In_Progress
+				fi
+                	        
+				if [ ${CNAONLY} = 0 ] 
+				then
+					mkdir vcfMerger_pegasus
 					touch SnpEFF_ANN_In_Progress
 				fi
 		
-				# Tracking for merged vcfs that have already gone through re-annotation or corrupt file.
-                      
-				#{{{
- 
-			 	MERGEDVCFCOMPLETED=0
-                	        for PAIR in `echo ${EXOMEPAIRS[@]} | sed 's/\s/\n/g'`
-                        	do
-                	                NORMALSAMPLE="`echo ${PAIR} | cut -d- -f1`"
-                        	        TUMORSAMPLE="`echo ${PAIR} | cut -d- -f2`"
-                        	        EXOMEPAIR="${NORMALSAMPLE}-${TUMORSAMPLE}"
-
-                        	        # Test if their are Original merged vcfs and if they have already already gone through the SnpEFF ANN anotation
-                        	        
-					if [ ${CNAONLY} = 0 ]
-					then
-						if [ -f vcfMerger/${EXOMEPAIR}/${EXOMEPAIR}.merged.all*Original ]
-						then
-							ORIGTEST=`ls vcfMerger/${EXOMEPAIR}/${EXOMEPAIR}*final.vcf.Original | wc -l `
-                        	  		else
-							ORIGTEST=0      
-						fi
-			
-						if [ ${ORIGTEST} = 2 ]
-                        	        	then
-                                		        for MERGEDVCFORIGINAL in `ls vcfMerger/${EXOMEPAIR}/${EXOMEPAIR}*final.vcf.Original `
-                        	        	        do
-                                		                BASENAME=`basename ${MERGEDVCFORIGINAL} .Original`
-                                		                rsync ${MERGEDVCFORIGINAL} vcfMerger/${EXOMEPAIR}/${BASENAME}
-                                		        done
-                                		else
-                                		        ANNTEST=`grep "##INFO=<ID=ANN" vcfMerger/${EXOMEPAIR}/${EXOMEPAIR}*final.vcf | wc -l`
-                                		        EFFTEST=`grep "##INFO=<ID=EFF" vcfMerger/${EXOMEPAIR}/${EXOMEPAIR}*final.vcf | wc -l`
-
-                                		        if [ ${ANNTEST} = 2 ]
-                                		        then
-                                	        	        echo
-                                	        	        echo Warning!!! The vcf for ${PATIENT_NAME} has already been gone through re-annotation and does not have an Original.
-                                	        	        echo Skipping all steps for this patient.
-                                	        	        echo
-                                	        	        echo You should restart ${PATIENT_NAME} from KBase!!
-                                	        	        echo
-                                	        	        MERGEDVCFCOMPLETED=1
-                                	        	        continue
-
-                                	        	elif [ ${EFFTEST} = 2 ]
-							then
-								echo Original ${EXOMEPAIR} VCF passed.	
-							else
-								echo
-								echo Warning!!! The vcf for ${PATIENT_NAME} does not have an Original or a re-annotated version.
-								echo Skipping all steps for this patient.
-                                	        	        echo
-                                	        	        echo You should restart ${PATIENT_NAME} from KBase!!
-                                	        	        echo
-                                	        	        MERGEDVCFCOMPLETED=1
-                                	        	        continue
-                                	        	fi
-                                		fi
-					fi
-                        	done
-
-				#}}}
-
-				# If one of the exome pairs has already gone through re-annotation then exit the the loop for this patient.		
-
-				#{{{
-	
-				if [ ${MERGEDVCFCOMPLETED} = 1 ]
-				then
-					echo ${PATIENT_NAME} >> ~/Post_processing_projects_to_be_restarted.txt
-					continue
-				fi
-
-				#}}}
-	
 				# loop through each DNA pair line Capturing needed variables and Start snpEff and CNA launcher for exomes       
 
                         	EXOMEPAIRSLIST=`echo ${EXOMEPAIRS[@]} | sed 's/\s/@/g'`
@@ -533,14 +523,31 @@ do
                         	        NORMALDAT=${NORMALSAMPLE}.proj.md.jr.bam.clc.cln.dat
                         	        TUMORDAT=${TUMORSAMPLE}.proj.md.jr.bam.clc.cln.dat
                         	        TUMORSHORT="`echo ${TUMORSAMPLE} | cut -d_ -f1,2,3,4,5`"
-                        	        NASSAY="`echo ${NORMALSAMPLE} | cut -d_ -f7`"
-                        	        TASSAY="`echo ${TUMORSAMPLE} | cut -d_ -f7`"
+					TUMORSPECIMEN="`echo ${TUMORSAMPLE} | cut -d_ -f1,2,3,4`"
+
+					#############!!!!!!!!!!!!!!!!!!!!!!!!
+					# MMRF specific
+					RNASAMPLE="`grep TRIPLET4ALLELECOUNT ${PATIENT_NAME}.config | awk -F',' -v TUMORSAMPLE=${TUMORSAMPLE} '$2 == TUMORSAMPLE { print $3 }' | grep TSMRU`"
+ 					############!!!!!!!!!!!!!!!!!!!!!!!!                       	        
+
+					NASSAY="`grep "SAMPLE=" ${PATIENT_NAME}.config | grep ${NORMALSAMPLE} | cut -d, -f1 | cut -d= -f2`"
+					TASSAY="`grep "SAMPLE=" ${PATIENT_NAME}.config | grep ${TUMORSAMPLE} | cut -d, -f1 | cut -d= -f2`"
                         	        CNAEXOMETARGET=`grep "${NASSAY}_CNABEDP=" ${CONSTANTS} | cut -d= -f2 | tr -d '\n'`
+					
+					if [ -z ${RNASAMPLE} ]
+					then
+						RNAFLAG=NO
+						RNAASSAY=NO
+					else
+						RNAFLAG=YES
+						RNAASSAY="`grep "SAMPLE=" ${PATIENT_NAME}.config | grep $RNASAMPLE | awk -F '[=,]' '{ print $2 }' `"
+					fi					
 
 					if [[ "$TASSAY" == "TSE61" ]] ; then
                 				bedFile="/home/tgenref/pipeline_v0.3/annotations/exome_capture/illumina_truseq/TruSeq_exome_targeted_regions_b37_padded.bed"
         				elif [[ "$TASSAY" == *S5U ]] || [[ "$kitName" == *S5X ]] ; then
-                				bedFile="/home/tgenref/pipeline_v0.3/ensembl70/Ensembl_v70_hs37d5_exonic_coordinates_touched_v5UTR_padded25.bed"
+                				#bedFile="/home/tgenref/pipeline_v0.3/ensembl70/Ensembl_v70_hs37d5_exonic_coordinates_touched_v5UTR_padded25.bed"
+						bedFile="/home/tgenref/pecan/annotations/exome_capture/Agilent_SureSelect_V5_plusUTR/Agilent_SureSelect_V5_plusUTR_hs37d5_GRCh37.74_PaddedTargets_intersect_sorted_padded100.bed"
         				elif [[ "$TASSAY" == *STX ]] ; then
                 				bedFile="/home/tgenref/pipeline_v0.4/annotations/exome_capture/strexome/Strexome_targets_intersect_sorted_padded100.bed"
         				elif [[ "$TASSAY" == *SCR ]] ; then
@@ -560,30 +567,36 @@ do
         				elif [[ "$TASSAY" == *E62 ]] ; then
                 				bedFile="/home/tgenref/pecan/annotations/exome_capture/illumina_nextera_expanded/NexteraExpandedExome_hs37d5_Targets_PicardPadded100.bed"
         				fi
-	
-					mkdir cna_manual_2016/${EXOMEPAIR}_exo
-        	                        touch cna_manual_2016/${EXOMEPAIR}_exo/CNA_Manual_In_Progress
-        	                        
+					
+					if [ ${MERGERONLY} = 0 ]	
+					then
+						mkdir cna_manual_2016/${EXOMEPAIR}_exo
+        	                        	touch cna_manual_2016/${EXOMEPAIR}_exo/CNA_Manual_In_Progress
+        	                        fi
+					
 					if [ ${CNAONLY} = 0 ]
 					then
-						touch vcfMerger/${EXOMEPAIR}/SnpEFF_ANN_In_Progress
+						mkdir vcfMerger_pegasus/${EXOMEPAIR}
+						touch vcfMerger_pegasus/${EXOMEPAIR}/SnpEFF_ANN_In_Progress
 					fi
 
-        	                        qsub -v CNAONLY="${CNAONLY}",BEDFILE=${bedFile},PBSNAME="${EXOMEPAIR}",STARTDIR="${STARTDIR}",CNAEXOMETARGET="${CNAEXOMETARGET}",NASSAY="${NASSAY}",TASSAY="${TASSAY}",LIBTYPE="${LIBTYPE}",USER="${USER}",PATIENT_NAME="${PATIENT_NAME}",NORMALSAMPLE="${NORMALSAMPLE}",TUMORSAMPLE="${TUMORSAMPLE}",VCF="${VCF}",NORMALDAT="${NORMALDAT}",TUMORDAT="${TUMORDAT}",EXOMEPAIR="${EXOMEPAIR}",EXOMEPAIRS=${EXOMEPAIRSLIST},EXPECTEDPAIRS=${EXPECTEDPAIRSLIST} ${EXOMEPBS}
+        	                        qsub -v RNAFLAG="${RNAFLAG}",RNASAMPLE="${RNASAMPLE}",RNAASSAY="${RNAASSAY}",CNAONLY="${CNAONLY}",MERGERONLY="${MERGERONLY}",BEDFILE=${bedFile},PBSNAME="${EXOMEPAIR}",STARTDIR="${STARTDIR}",CNAEXOMETARGET="${CNAEXOMETARGET}",NASSAY="${NASSAY}",TASSAY="${TASSAY}",LIBTYPE="${LIBTYPE}",USER="${USER}",PATIENT_NAME="${PATIENT_NAME}",NORMALSAMPLE="${NORMALSAMPLE}",TUMORSAMPLE="${TUMORSAMPLE}",VCF="${VCF}",NORMALDAT="${NORMALDAT}",TUMORDAT="${TUMORDAT}",EXOMEPAIR="${EXOMEPAIR}",EXOMEPAIRS=${EXOMEPAIRSLIST},EXPECTEDPAIRS=${EXPECTEDPAIRSLIST} ${EXOMEPBS}
 
         	                        if [ $? -ne 0 ]
         	                        then
-        	                        	rm CNA_Manual_In_Progress
-						rm cna_manual_2016/${EXOMEPAIR}_exo/CNA_Manual_In_Progress
-						echo Failed to start rsync qsub job for ${EXOMEPAIR} >> CNA_Manual_Fail
-						echo Failed to start rsync qsub job for ${EXOMEPAIR} >> cna_manual_2016/${EXOMEPAIR}_exo/CNA_Manual_Fail
-
+						if [ ${MERGERONLY} == 0 ]
+						then
+        	                        		rm CNA_Manual_In_Progress
+							rm cna_manual_2016/${EXOMEPAIR}_exo/CNA_Manual_In_Progress
+							echo Failed to start rsync qsub job for ${EXOMEPAIR} >> CNA_Manual_Fail
+							echo Failed to start rsync qsub job for ${EXOMEPAIR} >> cna_manual_2016/${EXOMEPAIR}_exo/CNA_Manual_Fail
+						fi
 						if [ ${CNAONLY} = 0 ]
 						then
         	                                	rm SnpEFF_ANN_In_Progress
-        	                                	rm vcfMerger/${EXOMEPAIR}/SnpEFF_ANN_In_Progress
+        	                                	rm vcfMerger_pegasus/${EXOMEPAIR}/SnpEFF_ANN_In_Progress
         	                                	echo Failed to start rsync qsub job for ${EXOMEPAIR} >> SnpEFF_ANN_Fail
-        	                                	echo Failed to start rsync qsub job for ${EXOMEPAIR} >> vcfMerger/${EXOMEPAIR}/SnpEFF_ANN_Fail
+        	                                	echo Failed to start rsync qsub job for ${EXOMEPAIR} >> vcfMerger_pegasus/${EXOMEPAIR}/SnpEFF_ANN_Fail
         	                        	fi
 					fi
 
@@ -607,7 +620,7 @@ do
 	                                        fi
 	                                done
 
-	                                if [ ${LICOUNT} -eq 1 ]
+	                                if [ ${LICOUNT} -eq 1 ] && [ ${MERGERONLY} == 0 ]
 	                                then
 	                                	for GPAIR in `echo ${LIPAIRS[@]} | sed 's/\s/\n/g'`
 	                                        do
@@ -642,7 +655,7 @@ do
         	                                                echo Failed to start rsync qsub job for ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_unfi/CNA_Manual_Fail
         	                                        fi
         	                                done
-        	                        elif [ ${LICOUNT} -ne 0 ]
+        	                        elif [ ${LICOUNT} -ne 0 ] && [ ${MERGERONLY} == 0 ]
         	                        then
         	                        	echo There is more than one LI for the Tumor Isolation.
         	                                echo "There is more than one LI for the Tumor Isolation." >> CNA_Manual_Fail
@@ -653,7 +666,7 @@ do
 
 			# Start Delly
 
-			if [ ${CNAONLY} = 0 ]
+			if [ ${CNAONLY} = 0 ] && [ ${MERGERONLY} == 0 ]
                         then
 				LICOUNT=0
 	                        LIPAIRS=()
@@ -716,7 +729,7 @@ do
 		
 		#{{{
 		
-		if [ ${CNAONLY} = 0 ]
+		if [ ${CNAONLY} = 0 ] && [ ${MERGERONLY} = 0 ]
 		then
 			RNACOUNT="`grep "SAMPLE=.*,RNA," ${PATIENT_NAME}.config | wc -l`"
 	
@@ -764,9 +777,9 @@ do
 						fi
  					fi
 
-			        	mkdir -p ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/{ensembl74_cDNA,ensembl74_GTF}
+			        	mkdir -p ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/{ensembl74_cDNA,ensembl74_GTF,ensembl74_GTF_V7.2}
 	                        	mkdir -p ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/{ensembl74_cDNA,ensembl74_GTF}
-	                        	touch ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/{ensembl74_cDNA,ensembl74_GTF}/Salmon_In_Progress
+	                        	touch ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/{ensembl74_cDNA,ensembl74_GTF,ensembl74_GTF_V7.2}/Salmon_In_Progress
 	                        	touch ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/{ensembl74_cDNA,ensembl74_GTF}/Kallisto_In_Progress
 	
 		                        # Will need code to get fastq directory and library type of RNA library for salmon      
@@ -780,11 +793,11 @@ do
 		                        then
 		                		rm Salmon_In_Progress
 		                                rm Kallisto_In_Progress
-		                                rm ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/{ensembl74_cDNA,ensembl74_GTF}/Salmon_In_Progress
+		                                rm ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/{ensembl74_cDNA,ensembl74_GTF,ensembl74_GTF_V7.2}/Salmon_In_Progress
 		                                rm ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/{ensembl74_cDNA,ensembl74_GTF}/Kallisto_In_Progress
 		                                echo Failed to start rsync qsub job for ${RNASAMPLEID} >> Salmon_Fail
 		                                echo Failed to start rsync qsub job for ${RNASAMPLEID} >> Kallisto_Fail
-		                                echo Failed to start rsync qsub job for ${RNASAMPLEID} | tee -a ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/{ensembl74_cDNA,ensembl74_GTF}/Salmon_Fail
+		                                echo Failed to start rsync qsub job for ${RNASAMPLEID} | tee -a ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/{ensembl74_cDNA,ensembl74_GTF,ensembl74_GTF_V7.2}/Salmon_Fail
 		                                echo Failed to start rsync qsub job for ${RNASAMPLEID} | tee -a ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/{ensembl74_cDNA,ensembl74_GTF}/Kallisto_Fail
 		                        fi
 		                done
