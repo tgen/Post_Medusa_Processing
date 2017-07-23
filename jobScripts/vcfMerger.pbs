@@ -15,6 +15,8 @@ module load R/3.1.1
 PATH=$PATH:/home/tgenref/pecan/bin/vt/
 export PATH
 
+export PERL5LIB=/home/achristofferson/local/vcftools_v0.1.14/src/perl/
+
 # Tool and Data Base Paths
 
 #{{{ 
@@ -37,7 +39,7 @@ GATK=/home/tgenref/pecan/bin/GATK3.5.0
 VCFMERGER=/home/tgenref/pecan/bin/mergeVcf/normalization/vcfMerger/pecan.merge.3vcfs.main.sh
 VCFMERGER_DIR=/home/tgenref/pecan/bin/mergeVcf/normalization/vcfMerger
 VCFSORTER=/home/tgenref/pecan/bin/vcfMerger/vcfsorter.pl
-RNA_VCF_HEADER=/home/tgenref/pecan/bin/vcfMerger/RNA_VCF_HEADER.vcf
+RNA_VCF_HEADER=/home/tgenref/pecan/post_central_pipe_processing/post_medusa_V1.0/RNA_VCF_HEADER.vcf
 POST_MERGE_VENN=/home/tgenref/pecan/bin/mergeVcf/normalization/vcfMerger/pecan.Venn_postMMRF_specific_filtering.sh
 DBSNP=/home/tgenref/pecan/annotations/public_data_bases/DBSNP_V147/dbsnp_147.b37_norm.vcf
 DBVERSION=GRCh37.74
@@ -58,6 +60,9 @@ cat ${EXOMEPAIR}.seurat.vcf | \
 if [ $? -ne 0 ]
 then
         FAILED=1
+	echo
+	echo !!!!!!!!!!!!  Failed Filter the seurat vcf !!!!!!!!!!
+	echo
 fi
 
 # Filter the seurat INDELS, use bed if no matched normal
@@ -68,6 +73,9 @@ cat ${EXOMEPAIR}.seurat.vcf | \
 if [ $? -ne 0 ]
 then
         FAILED=1
+	echo
+        echo !!!!!!!!!!!!  Failed Filter the seurat INDELS !!!!!!!!!!
+        echo
 fi
 
 # Filter the INDELs from SEURAT
@@ -78,6 +86,9 @@ cat ${EXOMEPAIR}_seurat_snv.vcf | \
 if [ $? -ne 0 ]
 then
         FAILED=1
+	echo
+        echo !!!!!!!!!!!!  Failed Filter the seurat snv by QUAL !!!!!!!!!!
+        echo
 fi
 
 cat ${EXOMEPAIR}_seurat_indel.vcf | \
@@ -86,6 +97,9 @@ cat ${EXOMEPAIR}_seurat_indel.vcf | \
 if [ $? -ne 0 ]
 then
         FAILED=1
+	echo
+        echo !!!!!!!!!!!!  Failed Filter the seurat INDELS by QUAL !!!!!!!!!!
+        echo
 fi
 
 # Filter the mutect vcf
@@ -97,6 +111,9 @@ FIRST_GENOTYPE_COLUMN=`grep -v "##" ${EXOMEPAIR}_MuTect_All.vcf | grep "#" | cut
 if [ $? -ne 0 ]
 then
         FAILED=1
+	echo
+        echo !!!!!!!!!!!!  Failed grep header !!!!!!!!!!
+        echo
 fi
 
 if [ "${FIRST_GENOTYPE_COLUMN}" == "${TUMOR}" ]
@@ -107,6 +124,9 @@ then
 	if [ $? -ne 0 ]
 	then
         	FAILED=1
+		echo
+        	echo !!!!!!!!!!!!  Failed Filter the mutect tumor section !!!!!!!!!!
+        	echo
 	fi
 elif [ "${FIRST_GENOTYPE_COLUMN}" == "${CONTROL}" ]
 then
@@ -117,11 +137,17 @@ then
 	if [ $? -ne 0 ]
 	then
 	        FAILED=1
+		echo
+        	echo !!!!!!!!!!!!  Failed Filter the mutect control section !!!!!!!!!!
+        	echo
 	fi
 else
         #This should not happen
         echo "ERROR - The mutect vcf did not contain the tumor or the control listed first.  Something is wrong here."
 	FAILED=1
+	echo
+        echo !!!!!!!!!!!!  Failed Filter the mutect bad !!!!!!!!!!
+        echo
 fi
 
 sed -i 's/\t*$//g' ${EXOMEPAIR}.mutect_snv_filt.vcf
@@ -129,6 +155,9 @@ sed -i 's/\t*$//g' ${EXOMEPAIR}.mutect_snv_filt.vcf
 if [ $? -ne 0 ]
 then
         FAILED=1
+	echo
+        echo !!!!!!!!!!!!  Failed sed part !!!!!!!!!!
+        echo
 fi
 
 # Merge vcf from the 3 callers
@@ -146,6 +175,9 @@ ${VCFMERGER} --dirscript ${VCFMERGER_DIR} \
 if [ $? -ne 0 ]
 then
         FAILED=1
+	echo
+        echo !!!!!!!!!!!!  Failed vcfMerger !!!!!!!!!!
+        echo
 fi
 	
 # Sort the Merged VCF for GATK compatibility
@@ -155,6 +187,9 @@ ${VCFSORTER} ${DICT} ${EXOMEPAIR}.merge.norm.vcf > ${EXOMEPAIR}.merge.sort.vcf
 if [ $? -ne 0 ]
 then
         FAILED=1
+	echo
+        echo !!!!!!!!!!!!  Failed sort merged vcf !!!!!!!!!!
+        echo
 fi
 
 # Remove unwanted INFO keys
@@ -173,6 +208,9 @@ java -jar ${SNPSIFT} rmInfo ${EXOMEPAIR}.merge.sort.vcf \
 if [ $? -ne 0 ]
 then
         FAILED=1
+	echo
+        echo !!!!!!!!!!!!  Failed remove info keys  !!!!!!!!!!
+        echo
 fi
 
 # Filter to target regions
@@ -182,6 +220,9 @@ cat ${EXOMEPAIR}.merge.sort.clean.vcf | java -jar ${SNPSIFT} intervals ${BEDFILE
 if [ $? -ne 0 ]
 then
         FAILED=1
+	echo
+        echo !!!!!!!!!!!!  Failed filter to targets  !!!!!!!!!!
+        echo
 fi
 
 # Annotate the merged vcf using GATK
@@ -203,6 +244,9 @@ java -Xmx24g -jar ${GATK}/GenomeAnalysisTK.jar -R ${REF} \
 if [ $? -ne 0 ]
 then
         FAILED=1
+	echo
+        echo !!!!!!!!!!!!  Failed GATK annotation  !!!!!!!!!!
+        echo
 fi
 
 # Determine if you need to run RNA allele counts or not 
@@ -236,6 +280,9 @@ then
 	if [ $? -ne 0 ]
 	then
         	FAILED=1
+		echo
+        	echo !!!!!!!!!!!!  Failed mpileup RNAflag yes  !!!!!!!!!!
+        	echo
 	fi
 
 	# Create vcf file header
@@ -272,6 +319,9 @@ then
 	if [ $? -ne 0 ]
         then
                 FAILED=1
+		echo
+        	echo !!!!!!!!!!!!  Failed tabulate pileup  !!!!!!!!!!
+        	echo
         fi
 
 	# Convert the VCF to at table
@@ -280,6 +330,9 @@ then
 	if [ $? -ne 0 ]
         then
                 FAILED=1
+		echo
+        	echo !!!!!!!!!!!!  Failed rna vcf to table !!!!!!!!!!
+        	echo
         fi
 
 	cut -f7 ${EXOMEPAIR}.RNA.calls.varscan.pre.table | sed -e 's/^$/./g' > ${EXOMEPAIR}.RNA.calls.varscan.pre2.table 
@@ -375,6 +428,9 @@ then
 	if [ $? -ne 0 ]
         then
                 FAILED=1
+		echo
+        	echo !!!!!!!!!!!!  Failed sort rna vcf calls  !!!!!!!!!!
+        	echo
         fi
 
 	# Add RNA values to merged calls
@@ -384,6 +440,9 @@ then
 	if [ $? -ne 0 ]
         then
                 FAILED=1
+		echo
+        	echo !!!!!!!!!!!!  Failed  add rna to merged vcf !!!!!!!!!!
+        	echo
         fi
 
 	
@@ -423,6 +482,9 @@ java -jar ${SNPSIFT} rmInfo ${EXOMEPAIR}.merge.sort.clean.f2t.ann.rna.vcf INDEL 
 if [ $? -ne 0 ]
 then
 	FAILED=1
+	echo
+        echo !!!!!!!!!!!!  Failed snpsift rminfo !!!!!!!!!!
+        echo
 fi
 
 # Add dbNSFP annotations
@@ -437,6 +499,9 @@ java -jar ${SNPSIFT} dbnsfp \
 if [ $? -ne 0 ]
 then
 	FAILED=1
+	echo
+        echo !!!!!!!!!!!!  Failed dbNSFP annotations  !!!!!!!!!!
+        echo
 fi
 
 # Add SnpEff ANN annotations (default with version 4.2)
@@ -449,6 +514,9 @@ java -Xmx14g -jar ${SNPEFF} -c ${SNPEFFPATH}/snpEff.config -lof GRCh37.74 ${EXOM
 if [ $? -ne 0 ]
 then
 	FAILED=1
+	echo
+        echo !!!!!!!!!!!!  Failed snpeff annotations  !!!!!!!!!!
+        echo
 fi
 
 java -Xmx14g -jar ${SNPEFF} -canon -c ${SNPEFFPATH}/snpEff.config -lof GRCh37.74 ${EXOMEPAIR}.merge.sort.clean.f2t.ann.rna.clean.dbnsfp.vcf | \
@@ -459,6 +527,9 @@ java -Xmx14g -jar ${SNPEFF} -canon -c ${SNPEFFPATH}/snpEff.config -lof GRCh37.74
 if [ $? -ne 0 ]
 then
         FAILED=1
+	echo
+        echo !!!!!!!!!!!!  Failed canon anno  !!!!!!!!!!
+        echo
 fi
 
 # Make final call list venn
@@ -468,6 +539,9 @@ ${POST_MERGE_VENN} --vcf ${EXOMEPAIR}.merge.sort.clean.f2t.ann.rna.clean.dbnsfp.
 if [ $? -ne 0 ]
 then
         FAILED=1
+	echo
+        echo !!!!!!!!!!!!  Failed final call list venn  !!!!!!!!!!
+        echo
 fi
 
 # Fix header lines that are missing, have spaces, dbNSFP errors, RNA_ALT_FREQ float problem.
@@ -500,18 +574,29 @@ then
         sed 's/dbNSFP_LRT_score,Number=A/dbNSFP_LRT_score,Number=./g' | \
         sed 's/dbNSFP_FATHMM_score,Number=A/dbNSFP_FATHMM_score,Number=./g' | \
         sed 's/dbNSFP_Polyphen2_HDIV_score,Number=A/dbNSFP_Polyphen2_HDIV_score,Number=./g' | \
-        sed 's/dbNSFP_Interpro_domain,Number=A/dbNSFP_Interpro_domain,Number=./g' > ${EXOMEPAIR}.merge.sort.clean.f2t.ann.rna.clean.dbnsfp.se74lof.fix.vcf 
+        sed 's/dbNSFP_Interpro_domain,Number=A/dbNSFP_Interpro_domain,Number=./g' | \
+	sed 's/##INFO=<ID=SNP,Number=A,Type=Flag,Description="Variant is a SNP">/##INFO=<ID=SNP,Number=0,Type=Flag,Description="Variant is a SNP">/g' | \
+	sed 's/##INFO=<ID=MNP,Number=A,Type=Flag,Description="Variant is a MNP">/##INFO=<ID=MNP,Number=0,Type=Flag,Description="Variant is a MNP">/g' | \
+	sed 's/##INFO=<ID=INS,Number=A,Type=Flag,Description="Variant is a INS">/##INFO=<ID=INS,Number=0,Type=Flag,Description="Variant is a INS">/g' | \
+	sed 's/##INFO=<ID=DEL,Number=A,Type=Flag,Description="Variant is a DEL">/##INFO=<ID=DEL,Number=0,Type=Flag,Description="Variant is a DEL">/g' | \
+	sed 's/##INFO=<ID=MIXED,Number=A,Type=Flag,Description="Variant is a MIXED">/##INFO=<ID=MIXED,Number=0,Type=Flag,Description="Variant is a MIXED">/g' > ${EXOMEPAIR}.merge.sort.clean.f2t.ann.rna.clean.dbnsfp.se74lof.fix.vcf 
 
 	if [ $? -ne 0 ]
 	then
 		FAILED=1
+		echo
+        	echo !!!!!!!!!!!!  Failed ARNA no vcf fix  !!!!!!!!!!
+        	echo
 	else
-		VALIDATOR="`${VCFVALIDATOR} ${EXOMEPAIR}.merge.sort.clean.f2t.ann.rna.clean.dbnsfp.se74lof.fix.vcf | wc -l`"
+		VALIDATOR="`${VCFVALIDATOR} ${EXOMEPAIR}.merge.sort.clean.f2t.ann.rna.clean.dbnsfp.se74lof.fix.vcf 2>&1 | wc -l`"
                 if [ ${VALIDATOR} = "0" ]
                 then
                         mv ${EXOMEPAIR}.merge.sort.clean.f2t.ann.rna.clean.dbnsfp.se74lof.fix.vcf ${EXOMEPAIR}.merged.allTranscripts.rna.final.vcf
                 else
 			FAILED=1
+			echo
+        		echo !!!!!!!!!!!!  Failed validator ARNA no on all vcf  !!!!!!!!!!
+        		echo
                 fi	
 	fi
 
@@ -541,18 +626,29 @@ then
         sed 's/dbNSFP_LRT_score,Number=A/dbNSFP_LRT_score,Number=./g' | \
         sed 's/dbNSFP_FATHMM_score,Number=A/dbNSFP_FATHMM_score,Number=./g' | \
         sed 's/dbNSFP_Polyphen2_HDIV_score,Number=A/dbNSFP_Polyphen2_HDIV_score,Number=./g' | \
-        sed 's/dbNSFP_Interpro_domain,Number=A/dbNSFP_Interpro_domain,Number=./g' > ${EXOMEPAIR}.merge.sort.clean.f2t.ann.rna.clean.dbnsfp.se74lofcan.fix.vcf
+        sed 's/dbNSFP_Interpro_domain,Number=A/dbNSFP_Interpro_domain,Number=./g' | \
+	sed 's/##INFO=<ID=SNP,Number=A,Type=Flag,Description="Variant is a SNP">/##INFO=<ID=SNP,Number=0,Type=Flag,Description="Variant is a SNP">/g' | \
+        sed 's/##INFO=<ID=MNP,Number=A,Type=Flag,Description="Variant is a MNP">/##INFO=<ID=MNP,Number=0,Type=Flag,Description="Variant is a MNP">/g' | \
+        sed 's/##INFO=<ID=INS,Number=A,Type=Flag,Description="Variant is a INS">/##INFO=<ID=INS,Number=0,Type=Flag,Description="Variant is a INS">/g' | \
+        sed 's/##INFO=<ID=DEL,Number=A,Type=Flag,Description="Variant is a DEL">/##INFO=<ID=DEL,Number=0,Type=Flag,Description="Variant is a DEL">/g' | \
+        sed 's/##INFO=<ID=MIXED,Number=A,Type=Flag,Description="Variant is a MIXED">/##INFO=<ID=MIXED,Number=0,Type=Flag,Description="Variant is a MIXED">/g' > ${EXOMEPAIR}.merge.sort.clean.f2t.ann.rna.clean.dbnsfp.se74lofcan.fix.vcf
 
         if [ $? -ne 0 ]
         then
                 FAILED=1
+		echo
+                echo !!!!!!!!!!!!  Failed ARNA no vcf fix on canon  !!!!!!!!!!
+                echo
         else
-                VALIDATOR="`${VCFVALIDATOR} ${EXOMEPAIR}.merge.sort.clean.f2t.ann.rna.clean.dbnsfp.se74lofcan.fix.vcf | wc -l`"
+                VALIDATOR="`${VCFVALIDATOR} ${EXOMEPAIR}.merge.sort.clean.f2t.ann.rna.clean.dbnsfp.se74lofcan.fix.vcf 2>&1 | wc -l`"
                 if [ ${VALIDATOR} = "0" ]
                 then
                         mv ${EXOMEPAIR}.merge.sort.clean.f2t.ann.rna.clean.dbnsfp.se74lofcan.fix.vcf ${EXOMEPAIR}.merged.canonicalOnly.rna.final.vcf
                 else
                         FAILED=1
+			echo
+                        echo !!!!!!!!!!!!  Failed validator ARNA no on canon vcf  !!!!!!!!!!
+                        echo
                 fi
         fi
 else
@@ -581,19 +677,28 @@ else
         sed 's/dbNSFP_FATHMM_score,Number=A/dbNSFP_FATHMM_score,Number=./g' | \
         sed 's/dbNSFP_Polyphen2_HDIV_score,Number=A/dbNSFP_Polyphen2_HDIV_score,Number=./g' | \
         sed 's/dbNSFP_Interpro_domain,Number=A/dbNSFP_Interpro_domain,Number=./g' | \
-        sed 's/RNA_ALT_FREQ,Number=1,Type=Integer/RNA_ALT_FREQ,Number=1,Type=Float/g' | \
-        sed 's/RNA_ALT_COUNT,Number=1,Type=Float/RNA_ALT_COUNT,Number=1,Type=Integer/g' > ${EXOMEPAIR}.merge.sort.clean.f2t.ann.rna.clean.dbnsfp.se74lof.fix.vcf
+	sed 's/##INFO=<ID=SNP,Number=A,Type=Flag,Description="Variant is a SNP">/##INFO=<ID=SNP,Number=0,Type=Flag,Description="Variant is a SNP">/g' | \
+        sed 's/##INFO=<ID=MNP,Number=A,Type=Flag,Description="Variant is a MNP">/##INFO=<ID=MNP,Number=0,Type=Flag,Description="Variant is a MNP">/g' | \
+        sed 's/##INFO=<ID=INS,Number=A,Type=Flag,Description="Variant is a INS">/##INFO=<ID=INS,Number=0,Type=Flag,Description="Variant is a INS">/g' | \
+        sed 's/##INFO=<ID=DEL,Number=A,Type=Flag,Description="Variant is a DEL">/##INFO=<ID=DEL,Number=0,Type=Flag,Description="Variant is a DEL">/g' | \
+        sed 's/##INFO=<ID=MIXED,Number=A,Type=Flag,Description="Variant is a MIXED">/##INFO=<ID=MIXED,Number=0,Type=Flag,Description="Variant is a MIXED">/g' > ${EXOMEPAIR}.merge.sort.clean.f2t.ann.rna.clean.dbnsfp.se74lof.fix.vcf
 
 	if [ $? -ne 0 ]
         then
 		FAILED=1
+		echo
+                echo !!!!!!!!!!!!  Failed ARNA yes vcf fix  !!!!!!!!!!
+                echo
         else
-		VALIDATOR="`${VCFVALIDATOR} ${EXOMEPAIR}.merge.sort.clean.f2t.ann.rna.clean.dbnsfp.se74lof.fix.vcf | wc -l`"
+		VALIDATOR="`${VCFVALIDATOR} ${EXOMEPAIR}.merge.sort.clean.f2t.ann.rna.clean.dbnsfp.se74lof.fix.vcf 2>&1 | wc -l`"
                 if [ ${VALIDATOR} = "0" ]
                 then
                 	mv ${EXOMEPAIR}.merge.sort.clean.f2t.ann.rna.clean.dbnsfp.se74lof.fix.vcf ${EXOMEPAIR}.merged.allTranscripts.rna.final.vcf
 		else
                 	FAILED=1
+			echo
+                        echo !!!!!!!!!!!!  Failed validator ARNA yes  !!!!!!!!!!
+                        echo
 		fi        
 	fi
 
@@ -622,19 +727,28 @@ else
         sed 's/dbNSFP_FATHMM_score,Number=A/dbNSFP_FATHMM_score,Number=./g' | \
         sed 's/dbNSFP_Polyphen2_HDIV_score,Number=A/dbNSFP_Polyphen2_HDIV_score,Number=./g' | \
         sed 's/dbNSFP_Interpro_domain,Number=A/dbNSFP_Interpro_domain,Number=./g' | \
-        sed 's/RNA_ALT_FREQ,Number=1,Type=Integer/RNA_ALT_FREQ,Number=1,Type=Float/g' | \
-        sed 's/RNA_ALT_COUNT,Number=1,Type=Float/RNA_ALT_COUNT,Number=1,Type=Integer/g' > ${EXOMEPAIR}.merge.sort.clean.f2t.ann.rna.clean.dbnsfp.se74lofcan.fix.vcf
+	sed 's/##INFO=<ID=SNP,Number=A,Type=Flag,Description="Variant is a SNP">/##INFO=<ID=SNP,Number=0,Type=Flag,Description="Variant is a SNP">/g' | \
+        sed 's/##INFO=<ID=MNP,Number=A,Type=Flag,Description="Variant is a MNP">/##INFO=<ID=MNP,Number=0,Type=Flag,Description="Variant is a MNP">/g' | \
+        sed 's/##INFO=<ID=INS,Number=A,Type=Flag,Description="Variant is a INS">/##INFO=<ID=INS,Number=0,Type=Flag,Description="Variant is a INS">/g' | \
+        sed 's/##INFO=<ID=DEL,Number=A,Type=Flag,Description="Variant is a DEL">/##INFO=<ID=DEL,Number=0,Type=Flag,Description="Variant is a DEL">/g' | \
+        sed 's/##INFO=<ID=MIXED,Number=A,Type=Flag,Description="Variant is a MIXED">/##INFO=<ID=MIXED,Number=0,Type=Flag,Description="Variant is a MIXED">/g' > ${EXOMEPAIR}.merge.sort.clean.f2t.ann.rna.clean.dbnsfp.se74lofcan.fix.vcf
 
         if [ $? -ne 0 ]
         then
                 FAILED=1
+		echo
+                echo !!!!!!!!!!!!  Failed ARNA yes vcf fix on canon  !!!!!!!!!!
+                echo
         else
-                VALIDATOR="`${VCFVALIDATOR} ${EXOMEPAIR}.merge.sort.clean.f2t.ann.rna.clean.dbnsfp.se74lofcan.fix.vcf | wc -l`"
+                VALIDATOR="`${VCFVALIDATOR} ${EXOMEPAIR}.merge.sort.clean.f2t.ann.rna.clean.dbnsfp.se74lofcan.fix.vcf 2>&1 | wc -l`"
                 if [ ${VALIDATOR} = "0" ]
                 then
                         mv ${EXOMEPAIR}.merge.sort.clean.f2t.ann.rna.clean.dbnsfp.se74lofcan.fix.vcf ${EXOMEPAIR}.merged.canonicalOnly.rna.final.vcf
                 else
                         FAILED=1
+			echo
+                        echo !!!!!!!!!!!!  Failed validator ARNA yes on canon  !!!!!!!!!!
+                        echo
                 fi
         fi
 fi
