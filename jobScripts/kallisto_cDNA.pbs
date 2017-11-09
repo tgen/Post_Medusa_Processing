@@ -18,7 +18,8 @@ module load salmon/0.5.0
 ##
 #####################################################
 
-KALLISTO_BINARY=/home/clegendre/tools/kallisto/0.42.4/bin/kallisto
+#KALLISTO_BINARY=/home/clegendre/tools/kallisto/0.42.4/bin/kallisto
+KALLISTO_BINARY=/home/clegendre/bin/kallisto
 KALLISTO_INDEX_cDNA=/home/achristofferson/kallisto_index/Homo_sapiens.GRCh37.74.cdna.hs37d5.fasta.index
 
 # Make fastq list for Kallisto
@@ -35,8 +36,8 @@ if [ "$?" -ne "0" ]
 then
 	ssh ${USER}@172.19.1.222 "cd ${STARTDIR}/${PATIENT_NAME} ; \
 		rm ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/ensembl74_cDNA/Kallisto_In_Progress ; \
-		echo Salmon failed for ${RNASAMPLEID} >> ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/ensembl74_cDNA/Kallisto_Fail ; \
-		echo Salmon failed for ${RNASAMPLEID} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org"
+		echo Kallisto failed for ${RNASAMPLEID} >> ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/ensembl74_cDNA/Kallisto_Fail ; \
+		echo Kallisto failed for ${RNASAMPLEID} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org"
 	exit 1
 else
 	cd ${SAMPLE}.kallistoDir/ensembl74_cDNA
