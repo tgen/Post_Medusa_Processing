@@ -16,7 +16,7 @@
 ##               After all pbs jobs on pnap are finished the new data will
 ##               automatically copy back to isilon.
 ##
-## Usage = Post_Medusa_Processing_V1.0.sh [-help] [-rp] [-b y] [-l file.txt]
+## Usage = Post_Medusa_Processing_V1.0.sh [--help] [-rp] [-b y] [-l file.txt]
 ##
 ## Options:
 ##      -r      Rename "*_ps*" timestamped directories
