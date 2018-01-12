@@ -1,18 +1,28 @@
 #!/bin/bash
-#PBS -l nodes=1:ppn=8
-#PBS -N vcfMerger
-#PBS -l walltime=96:00:00
-#PBS -j oe
-#PBS -o ${HOME}/STD_OUT/${PBS_JOBNAME}_${TUMOR}_${PBS_JOBID}.out
+#SBATCH --job-name="vcfMerger"
+#SBATCH --time=24:00:00 
+#SBATCH -n 1
+#SBATCH -N 1
+#SBATCH --cpus-per-task 8
+#SBATCH --mail-user=${USER}@tgen.org
 
-cd $PBS_O_WORKDIR
 cd ${DIR}
 
 set -o pipefail
 
-module load BEDTools/2.14.0
-module load R/3.1.1
-PATH=$PATH:/home/tgenref/pecan/bin/vt/
+# Does not exist. need to use newer version
+#module load BEDTools/2.14.0
+module load BEDTools/2.26.0
+
+# Does not exist. need to use newer version
+#module load R/3.1.1
+module load R/3.4.1
+
+module load java/jdk-1.8.0_91
+ 
+
+
+PATH=$PATH:/home/tgenref/binaries/vt/
 export PATH
 
 export PERL5LIB=/home/achristofferson/local/vcftools_v0.1.14/src/perl/
@@ -21,32 +31,38 @@ export PERL5LIB=/home/achristofferson/local/vcftools_v0.1.14/src/perl/
 
 #{{{ 
 PICARDPATH=/packages/picard-tools/1.128
-EXAC=/home/tgenref/pecan/annotations/public_data_bases/EXAC_V0.3/ExAC.r0.3.sites.vep_fixed_norm.vcf
-COSMICC=/home/tgenref/pecan/annotations/public_data_bases/COSMIC_V74/CosmicCodingMuts_with_contigs.norm.vcf
-COSMICNC=/home/tgenref/pecan/annotations/public_data_bases/COSMIC_V74/CosmicNonCodingVariants_with_contigs_norm.vcf
-DBNSFP=/home/tgenref/pecan/dbNSFP2.9/dbNSFP2.9.txt.gz
+EXAC=/home/tgenref/homo_sapiens/grch37_hg19/public_databases/exac/r0.3.0/ExAC.r0.3.sites.vep_fixed_norm.vcf
+COSMICC=/home/tgenref/homo_sapiens/grch37_hg19/public_databases/cosmic/v74/CosmicCodingMuts_with_contigs.norm.vcf
+COSMICNC=/home/tgenref/homo_sapiens/grch37_hg19/public_databases/cosmic/v74/CosmicNonCodingVariants_with_contigs_norm.vcf
+DBNSFP=/home/tgenref/homo_sapiens/grch37_hg19/public_databases/dbnsfp/v2.9/dbNSFP2.9.txt.gz
 SNPEFFPATH=/home/achristofferson/local/snpEff_4.2_2015-12-05
 SNPSIFT=/home/achristofferson/local/snpEff_4.2_2015-12-05/SnpSift.jar
 SNPEFF=/home/achristofferson/local/snpEff_4.2_2015-12-05/snpEff.jar
-SAMTOOLS=/packages/samtools/1.2
-VARSCAN=/home/tgenref/pecan/bin/varscan-2.3.7
-REF=/home/tgenref/pecan/refgenome/hs37d5/hs37d5_plusRibo_plusOncoViruses_plusERCC.fa
-DICT=/home/tgenref/pecan/refgenome/hs37d5/hs37d5_plusRibo_plusOncoViruses_plusERCC.dict
-KG=/home/tgenref/pecan/annotations/public_data_bases/1000G_Phase3/ALL.ALL.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes_no_samples_OLD_VARIANT_norm.vcf
-NHLBI=/home/tgenref/pecan/annotations/public_data_bases/NHLBI_V2_SSA137/ESP6500SI-V2-SSA137.GRCh38-liftover.all.snps_indels_with_contigs_norm.vcf
-INDELS=/home/tgenref/pipeline_v0.3/gatk_bundle_2.5/b37/Mills_and_1000G_gold_standard.indels.b37.vcf
-GATK=/home/tgenref/pecan/bin/GATK3.5.0
-VCFMERGER=/home/tgenref/pecan/bin/mergeVcf/normalization/vcfMerger/pecan.merge.3vcfs.main.sh
-VCFMERGER_DIR=/home/tgenref/pecan/bin/mergeVcf/normalization/vcfMerger
-VCFSORTER=/home/tgenref/pecan/bin/vcfMerger/vcfsorter.pl
-RNA_VCF_HEADER=/home/tgenref/pecan/post_central_pipe_processing/post_medusa_V1.0/RNA_VCF_HEADER.vcf
-POST_MERGE_VENN=/home/tgenref/pecan/bin/mergeVcf/normalization/vcfMerger/pecan.Venn_postMMRF_specific_filtering.sh
-DBSNP=/home/tgenref/pecan/annotations/public_data_bases/DBSNP_V147/dbsnp_147.b37_norm.vcf
+SAMTOOLS=/packages/samtools/1.4.1/bin
+VARSCAN=/home/tgenref/binaries/varscan/varscan-2.3.7
+REF=/home/tgenref/homo_sapiens/grch37_hg19/hs37d5_tgen/genome_reference/hs37d5_plusRibo_plusOncoViruses_plusERCC.fa
+DICT=/home/tgenref/homo_sapiens/grch37_hg19/hs37d5_tgen/genome_reference/hs37d5_plusRibo_plusOncoViruses_plusERCC.dict
+KG=/home/tgenref/homo_sapiens/grch37_hg19/public_databases/1000G/ALL.ALL.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes_no_samples_OLD_VARIANT_norm.vcf
+NHLBI=/home/tgenref/homo_sapiens/grch37_hg19/public_databases/nhlbi/esp6500si_v2_ssa137/ESP6500SI-V2-SSA137.GRCh38-liftover.all.snps_indels_with_contigs_norm.vcf
+INDELS=/home/tgenref/homo_sapiens/grch37_hg19/public_databases/1000G/Mills_and_1000G_gold_standard.indels.b37.vcf
+GATK=/home/achristofferson/local/GenomeAnalysisTK-3.8-0-ge9d806836
+VCFMERGER=/home/tgenref/binaries/vcfMerger/mergeVcf/normalization/vcfMerger/pecan.merge.3vcfs.main.sh
+VCFMERGER_DIR=/home/tgenref/binaries/vcfMerger/mergeVcf/normalization/vcfMerger
+VCFSORTER=/home/tgenref/binaries/vcfMerger/vcfMerger/vcfsorter.pl
+RNA_VCF_HEADER=${BASEDIR}/RNA_VCF_HEADER.vcf
+POST_MERGE_VENN=/home/tgenref/binaries/vcfMerger/mergeVcf/normalization/vcfMerger/pecan.Venn_postMMRF_specific_filtering.sh
+DBSNP=/home/tgenref/homo_sapiens/grch37_hg19/public_databases/dbsnp/b147/dbsnp_147.b37_norm.vcf
 DBVERSION=GRCh37.74
 
 VCFVALIDATOR=/home/achristofferson/local/vcftools_v0.1.14/bin/vcf-validator
-BCFTOOLS=/home/achristofferson/local/bcftools_v1.2-172-g06ce5a1/bcftools
-HEADER=/home/tgenref/pecan/post_central_pipe_processing/post_medusa_V1.0/vcf_RNA_INFO_header.hdr
+VCFVALIDATORPATH=/home/achristofferson/local/vcftools_v0.1.14/bin
+PATH=$VCFVALIDATORPATH:$PATH
+BCFTOOLS=/home/achristofferson/local/bcftools-1.6/bcftools
+BCFTOOLSPATH=/home/achristofferson/local/bcftools-1.6
+PATH=$BCFTOOLSPATH:$PATH
+export PATH
+
+HEADER=${BASEDIR}/vcf_RNA_INFO_header.hdr
 
 #}}}
 
@@ -243,10 +259,10 @@ java -Xmx24g -jar ${GATK}/GenomeAnalysisTK.jar -R ${REF} \
 
 if [ $? -ne 0 ]
 then
-        FAILED=1
+	FAILED=1
 	echo
-        echo !!!!!!!!!!!!  Failed GATK annotation  !!!!!!!!!!
-        echo
+	echo !!!!!!!!!!!!  Failed GATK annotation  !!!!!!!!!!
+	echo
 fi
 
 # Determine if you need to run RNA allele counts or not 
@@ -534,7 +550,7 @@ fi
 
 # Make final call list venn
 
-${POST_MERGE_VENN} --vcf ${EXOMEPAIR}.merge.sort.clean.f2t.ann.rna.clean.dbnsfp.se74lofcan.vcf --outprefix ${EXOMEPAIR}_finalVenn --maintitle ${EXOMEPAIR} --
+${POST_MERGE_VENN} --vcf ${EXOMEPAIR}.merge.sort.clean.f2t.ann.rna.clean.dbnsfp.se74lofcan.vcf --dirscript ${VCFMERGER_DIR}/ --dir-snpsift ${SNPEFFPATH} --outprefix ${EXOMEPAIR}_finalVenn --maintitle ${EXOMEPAIR} --
 
 if [ $? -ne 0 ]
 then
@@ -550,6 +566,7 @@ if [ ${ARNA} = "No"  ]
 then
 	${BCFTOOLS} annotate -h ${HEADER} ${EXOMEPAIR}.merge.sort.clean.f2t.ann.rna.clean.dbnsfp.se74lof.vcf | \
 	sed 's/'\'' '\"'/'\'\"'/g' | \
+	sed 's/##FORMAT=<ID=AD,Number=R/##FORMAT=<ID=AD,Number=./g' | \
 	sed 's|##FILTER=<ID=PASS>|##FILTER=<ID=PASS,Description="Accept as a confident somatic mutation">|g' | \
 	sed 's|##FILTER=<ID=PASS,Description="All filters passed">|##FILTER=<ID=PASS,Description="Accept as a confident somatic mutation">|g' | \
 	sed 's/dbNSFP_CADD_raw,Number=A/dbNSFP_CADD_raw,Number=./g' | \
@@ -602,6 +619,7 @@ then
 
 	${BCFTOOLS} annotate -h ${HEADER} ${EXOMEPAIR}.merge.sort.clean.f2t.ann.rna.clean.dbnsfp.se74lofcan.vcf | \
         sed 's/'\'' '\"'/'\'\"'/g' | \
+		sed 's/##FORMAT=<ID=AD,Number=R/##FORMAT=<ID=AD,Number=./g' | \
 	sed 's|##FILTER=<ID=PASS>|##FILTER=<ID=PASS,Description="Accept as a confident somatic mutation">|g' | \
         sed 's|##FILTER=<ID=PASS,Description="All filters passed">|##FILTER=<ID=PASS,Description="Accept as a confident somatic mutation">|g' | \
         sed 's/dbNSFP_CADD_raw,Number=A/dbNSFP_CADD_raw,Number=./g' | \
@@ -655,6 +673,7 @@ else
 	sed 's/'\'' '\"'/'\'\"'/g' ${EXOMEPAIR}.merge.sort.clean.f2t.ann.rna.clean.dbnsfp.se74lof.vcf | \
 	sed 's|##FILTER=<ID=PASS>|##FILTER=<ID=PASS,Description="Accept as a confident somatic mutation">|g' | \
 	sed 's/dbNSFP_CADD_raw,Number=A/dbNSFP_CADD_raw,Number=./g' | \
+		sed 's/##FORMAT=<ID=AD,Number=R/##FORMAT=<ID=AD,Number=./g' | \
         sed 's/dbNSFP_CADD_raw_rankscore,Number=A/dbNSFP_CADD_raw_rankscore,Number=./g' | \
         sed 's/dbNSFP_CADD_phred,Number=A/dbNSFP_CADD_phred,Number=./g' | \
         sed 's/dbNSFP_Polyphen2_HVAR_pred,Number=A/dbNSFP_Polyphen2_HVAR_pred,Number=./g' | \
@@ -684,27 +703,28 @@ else
         sed 's/##INFO=<ID=MIXED,Number=A,Type=Flag,Description="Variant is a MIXED">/##INFO=<ID=MIXED,Number=0,Type=Flag,Description="Variant is a MIXED">/g' > ${EXOMEPAIR}.merge.sort.clean.f2t.ann.rna.clean.dbnsfp.se74lof.fix.vcf
 
 	if [ $? -ne 0 ]
-        then
+	then
 		FAILED=1
 		echo
-                echo !!!!!!!!!!!!  Failed ARNA yes vcf fix  !!!!!!!!!!
-                echo
-        else
+		echo !!!!!!!!!!!!  Failed ARNA yes vcf fix  !!!!!!!!!!
+		echo
+	else
 		VALIDATOR="`${VCFVALIDATOR} ${EXOMEPAIR}.merge.sort.clean.f2t.ann.rna.clean.dbnsfp.se74lof.fix.vcf 2>&1 | wc -l`"
-                if [ ${VALIDATOR} = "0" ]
-                then
-                	mv ${EXOMEPAIR}.merge.sort.clean.f2t.ann.rna.clean.dbnsfp.se74lof.fix.vcf ${EXOMEPAIR}.merged.allTranscripts.rna.final.vcf
+		if [ ${VALIDATOR} = "0" ]
+		then
+			mv ${EXOMEPAIR}.merge.sort.clean.f2t.ann.rna.clean.dbnsfp.se74lof.fix.vcf ${EXOMEPAIR}.merged.allTranscripts.rna.final.vcf
 		else
-                	FAILED=1
+			FAILED=1
 			echo
-                        echo !!!!!!!!!!!!  Failed validator ARNA yes  !!!!!!!!!!
-                        echo
+			echo !!!!!!!!!!!!  Failed validator ARNA yes  !!!!!!!!!!
+			echo
 		fi        
 	fi
 
 	sed 's/'\'' '\"'/'\'\"'/g' ${EXOMEPAIR}.merge.sort.clean.f2t.ann.rna.clean.dbnsfp.se74lofcan.vcf | \
         sed 's|##FILTER=<ID=PASS>|##FILTER=<ID=PASS,Description="Accept as a confident somatic mutation">|g' | \
         sed 's/dbNSFP_CADD_raw,Number=A/dbNSFP_CADD_raw,Number=./g' | \
+		sed 's/##FORMAT=<ID=AD,Number=R/##FORMAT=<ID=AD,Number=./g' | \
         sed 's/dbNSFP_CADD_raw_rankscore,Number=A/dbNSFP_CADD_raw_rankscore,Number=./g' | \
         sed 's/dbNSFP_CADD_phred,Number=A/dbNSFP_CADD_phred,Number=./g' | \
         sed 's/dbNSFP_Polyphen2_HVAR_pred,Number=A/dbNSFP_Polyphen2_HVAR_pred,Number=./g' | \
@@ -757,14 +777,14 @@ fails=0
 
 if [ ${FAILED} = 0 ]
 then
-	ssh ${USER}@172.19.1.224 "rsync -r ${DIR}/Venns ${STARTDIR}/${PATIENT_NAME}/vcfMerger_pegasus/${EXOMEPAIR}/"
+	ssh ${USER}@10.48.73.18 "rsync -r ${DIR}/Venns ${STARTDIR}/${PATIENT_NAME}/vcfMerger_pegasus/${EXOMEPAIR}/"
 
 	if [ $? -ne 0 ]
         then
                 fails=1
         fi
 	
-	ssh ${USER}@172.19.1.224 "rsync ${DIR}/${EXOMEPAIR}.merge.vcf ${STARTDIR}/${PATIENT_NAME}/vcfMerger_pegasus/${EXOMEPAIR}/"
+	ssh ${USER}@10.48.73.18 "rsync ${DIR}/${EXOMEPAIR}.merge.vcf ${STARTDIR}/${PATIENT_NAME}/vcfMerger_pegasus/${EXOMEPAIR}/"
 
 	if [ $? -ne 0 ]
         then
@@ -773,9 +793,9 @@ then
 
 	for extToCopy in tsv png
 	do
-		for fileToSave in `find ${DIR} -name "*$extToCopy"`
+		for fileToSave in `find ${DIR} -maxdepth 1 -name "*$extToCopy"`
 		do
-			ssh ${USER}@172.19.1.224 "rsync $fileToSave ${STARTDIR}/${PATIENT_NAME}/vcfMerger_pegasus/${EXOMEPAIR}/"
+			ssh ${USER}@10.48.73.18 "rsync $fileToSave ${STARTDIR}/${PATIENT_NAME}/vcfMerger_pegasus/${EXOMEPAIR}/"
 			
 			if [ $? -ne 0 ]
                         then
@@ -784,15 +804,15 @@ then
 		done
 	done
 
-	ssh ${USER}@172.19.1.224 "rsync ${DIR}/${EXOMEPAIR}.merged.canonicalOnly.rna.final.vcf ${STARTDIR}/${PATIENT_NAME}/vcfMerger_pegasus/${EXOMEPAIR}/"
+	ssh ${USER}@10.48.73.18 "rsync ${DIR}/${EXOMEPAIR}.merged.canonicalOnly.rna.final.vcf ${STARTDIR}/${PATIENT_NAME}/vcfMerger_pegasus/${EXOMEPAIR}/"
 	
 	if [ $? = 0 ] && [ $fails -eq 0 ] 
 	then
-		ssh ${USER}@172.19.1.224 "rsync ${DIR}/${EXOMEPAIR}.merged.allTranscripts.rna.final.vcf ${STARTDIR}/${PATIENT_NAME}/vcfMerger_pegasus/${EXOMEPAIR}/"
+		ssh ${USER}@10.48.73.18 "rsync ${DIR}/${EXOMEPAIR}.merged.allTranscripts.rna.final.vcf ${STARTDIR}/${PATIENT_NAME}/vcfMerger_pegasus/${EXOMEPAIR}/"
 
 		if [ $? = 0 ] && [ $fails -eq 0 ]
 		then
-			ssh ${USER}@172.19.1.224 "rm ${STARTDIR}/${PATIENT_NAME}/vcfMerger_pegasus/${EXOMEPAIR}/SnpEFF_ANN_In_Progress ; \
+			ssh ${USER}@10.48.73.18 "rm ${STARTDIR}/${PATIENT_NAME}/vcfMerger_pegasus/${EXOMEPAIR}/SnpEFF_ANN_In_Progress ; \
 				touch ${STARTDIR}/${PATIENT_NAME}/vcfMerger_pegasus/${EXOMEPAIR}/SnpEFF_ANN_Complete ; \
 				COMPLETE=0 ; \
 				for XPAIR in \`echo ${EXOMEPAIRS} | sed 's/@/\n/g'\`
@@ -808,18 +828,18 @@ then
 					touch ${STARTDIR}/${PATIENT_NAME}/SnpEFF_ANN_Complete
 				fi"
 		else
-			ssh ${USER}@172.19.1.224 "rm ${STARTDIR}/${PATIENT_NAME}/vcfMerger_pegasus/${EXOMEPAIR}/SnpEFF_ANN_In_Progress ; \
+			ssh ${USER}@10.48.73.18 "rm ${STARTDIR}/${PATIENT_NAME}/vcfMerger_pegasus/${EXOMEPAIR}/SnpEFF_ANN_In_Progress ; \
 				echo Failed to rsync the allTranscripts merged vcf back to isilon for ${EXOMEPAIR} >> ${STARTDIR}/${PATIENT_NAME}/vcfMerger_pegasus/${EXOMEPAIR}/SnpEFF_ANN_Fail ; \
 				echo Failed to rsync the allTranscripts merged vcf back to isilon for ${EXOMEPAIR} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org "	
 		fi
 	else
-		ssh ${USER}@172.19.1.224 "rm ${STARTDIR}/${PATIENT_NAME}/vcfMerger_pegasus/${EXOMEPAIR}/SnpEFF_ANN_In_Progress ; \
+		ssh ${USER}@10.48.73.18 "rm ${STARTDIR}/${PATIENT_NAME}/vcfMerger_pegasus/${EXOMEPAIR}/SnpEFF_ANN_In_Progress ; \
                 	echo Failed to rsync the canonical merged vcf back to isilon for ${EXOMEPAIR} >> ${STARTDIR}/${PATIENT_NAME}/vcfMerger_pegasus/${EXOMEPAIR}/SnpEFF_ANN_Fail ; \
                         echo Failed to rsync the canonical merged vcf back to isilon for ${EXOMEPAIR} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org "
 	
 	fi
 else
-	ssh ${USER}@172.19.1.224 "rm ${STARTDIR}/${PATIENT_NAME}/vcfMerger_pegasus/${EXOMEPAIR}/SnpEFF_ANN_In_Progress ; \
+	ssh ${USER}@10.48.73.18 "rm ${STARTDIR}/${PATIENT_NAME}/vcfMerger_pegasus/${EXOMEPAIR}/SnpEFF_ANN_In_Progress ; \
         	echo SnpEFF failed somewere in the process for ${EXOMEPAIR} >> ${STARTDIR}/${PATIENT_NAME}/vcfMerger_pegasus/${EXOMEPAIR}/SnpEFF_ANN_Fail ; \
                 echo SnpEFF failed somewere in the process for ${EXOMEPAIR} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org "
 

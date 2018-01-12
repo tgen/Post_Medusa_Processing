@@ -7,39 +7,51 @@
 
 cd $PBS_O_WORKDIR
 
-JOBSDIR=/home/tgenref/pecan/post_central_pipe_processing/post_medusa_V1.0/jobScripts
-
+JOBSDIR=${BASEDIR}/jobScripts
 
 # Make Directories for Salmon and Kalliso
 
-ssh ${USER}@pnap-data2.tgen.org "mkdir -p /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/{${RNASAMPLEID}.salmonDir,${RNASAMPLEID}.kallistoDir}/{ensembl74_cDNA,ensembl74_GTF} ; mkdir /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/ensembl74_GTF_V7.2"
-
-if [ $? -ne 0 ]
+if [ ${TOPHATONLY} = 0 ]
 then
-	rm Salmon_In_Progress 
-	rm Kallisto_In_Progress
-	rm ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/{ensembl74_cDNA,ensembl74_GTF,ensembl74_GTF_V7.2}/Salmon_In_Progress
-	rm ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/{ensembl74_cDNA,ensembl74_GTF}/Kallisto_In_Progress
-	echo Failed to make Salmon and Kallisto directories for ${RNASAMPLEID} >> Salmon_Fail
-	echo Failed to make Salmon and Kallisto directories for ${RNASAMPLEID} >> Kallisto_Fail
-	echo Failed to make Salmon and Kallisto directories for ${RNASAMPLEID} | tee -a ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/{ensembl74_cDNA,ensembl74_GTF,ensembl74_GTF_V7.2}/Salmon_Fail
-	echo Failed to make Salmon and Kallisto directories for ${RNASAMPLEID} | tee -a ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/{ensembl74_cDNA,ensembl74_GTF}/Kallisto_Fail
-	echo Failed to make Salmon and Kallisto directories for ${RNASAMPLEID} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
-	exit 1	
-fi
-
-# Rsync fastqs over to pnap
-
-LINKFLAG=0
-
-for FASTQ in `grep "FQ=" ${PATIENT_NAME}.config | grep ${RNASAMPLEID} | cut -d, -f2 | rev | cut -c 17- | rev `
-do
-	ssh ${USER}@pnap-data2.tgen.org " if [ ! -f ${FASTQ}_R1_001.fastq.gz ] ; then exit 1 ; fi "	
+	ssh ${USER}@dback-data2.tgen.org "mkdir -p /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/{${RNASAMPLEID}.salmonDir,${RNASAMPLEID}.kallistoDir}/{ensembl74_cDNA,ensembl74_GTF} ; mkdir /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/ensembl74_GTF_V7.2"
 
 	if [ $? -ne 0 ]
 	then
-		fastq=`echo ${FASTQ} sed "s|/scratch/mrussell/chiaPipe/runFolders|${FASTQDIR}|g" | sed "s|/scratch/akurdoglu/genFastqPipe/runFolders|${FASTQDIR}|g" | sed "s|/scratch/tgenjetstream/chiaPipe/runFolders|${FASTQDIR}|g" `
+		rm Salmon_In_Progress 
+		rm Kallisto_In_Progress
+		rm ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/{ensembl74_cDNA,ensembl74_GTF,ensembl74_GTF_V7.2}/Salmon_In_Progress
+		rm ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/{ensembl74_cDNA,ensembl74_GTF}/Kallisto_In_Progress
+		echo Failed to make Salmon and Kallisto directories for ${RNASAMPLEID} >> Salmon_Fail
+		echo Failed to make Salmon and Kallisto directories for ${RNASAMPLEID} >> Kallisto_Fail
+		echo Failed to make Salmon and Kallisto directories for ${RNASAMPLEID} | tee -a ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/{ensembl74_cDNA,ensembl74_GTF,ensembl74_GTF_V7.2}/Salmon_Fail
+		echo Failed to make Salmon and Kallisto directories for ${RNASAMPLEID} | tee -a ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/{ensembl74_cDNA,ensembl74_GTF}/Kallisto_Fail
+		echo Failed to make Salmon and Kallisto directories for ${RNASAMPLEID} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
+		exit 1
+	fi
+else
+	ssh ${USER}@dback-data2.tgen.org "mkdir -p /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.topHatFusionDir "
+	if [ $? -ne 0 ]
+	then
+		echo Failed to make TopHat Fusion directories for ${RNASAMPLEID} >> TopHatFusion_Fail
+		exit 1
+	fi
+fi
+
+# Rsync fastqs over to dback
+
+LINKFLAG=0
+FASTQR1=()
+FASTQR2=()
+
+for FASTQ in `grep "FQ=" ${PATIENT_NAME}.config | grep ${RNASAMPLEID} | cut -d, -f2 | rev | cut -c 17- | rev `
+do
+	ssh ${USER}@dback-data2.tgen.org " if [ ! -f ${FASTQ}_R1_001.fastq.gz ] ; then exit 1 ; fi "	
+
+	if [ $? -ne 0 ]
+	then
+		fastq=`echo ${FASTQ} | sed "s|/scratch/mrussell/chiaPipe/runFolders|${FASTQDIR}|g" | sed "s|/scratch/akurdoglu/genFastqPipe/runFolders|${FASTQDIR}|g" | sed "s|/scratch/tgenjetstream/chiaPipe/runFolders|${FASTQDIR}|g" `
 		LINKFLAG=1
+		fastqBASE=`basename $fastq `
 	else
 		fastq=$FASTQ
 		fastqBASE=`basename $fastq `
@@ -47,55 +59,88 @@ do
 
 	if [ $LINKFLAG -ne 0 ]
 	then
-        	ssh ${USER}@pnap-data2.tgen.org " rsync ${fastq}_R1_001.fastq.gz /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/"
+		ssh ${USER}@dback-data2.tgen.org " rsync ${fastq}_R1_001.fastq.gz /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/"
+		STATUS=$?
 	else
-		ssh ${USER}@pnap-data2.tgen.org " ln -s ${fastq}_R1_001.fastq.gz /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${fastqBASE}_R1_001.fastq.gz "
+		ssh ${USER}@dback-data2.tgen.org " ln -s ${fastq}_R1_001.fastq.gz /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${fastqBASE}_R1_001.fastq.gz "
+		STATUS=$?
 	fi
 
-        if [ "$?" -ne "0" ]
-        then
+	if [ "$STATUS" -ne "0" ] && [ ${TOPHATONLY} = 0 ]
+	then
 		rm Salmon_In_Progress
 		rm Kallisto_In_Progress
 		rm ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/{ensembl74_cDNA,ensembl74_GTF,ensembl74_GTF_V7.2}/Salmon_In_Progress
 		rm ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/{ensembl74_cDNA,ensembl74_GTF}/Kallisto_In_Progress
-		echo Failed to rsync a fastq over to pnap for ${RNASAMPLEID} >> Salmon_Fail
-		echo Failed to rsync a fastq over to pnap for ${RNASAMPLEID} >> Kallisto_Fail 
-		echo Failed to rsync a fastq over to pnap for ${RNASAMPLEID} | tee -a ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/{ensembl74_cDNA,ensembl74_GTF,ensembl74_GTF_V7.2}/Salmon_Fail 
-		echo Failed to rsync a fastq over to pnap for ${RNASAMPLEID} | tee -a ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/{ensembl74_cDNA,ensembl74_GTF}/Kallisto_Fail
-		echo Failed to rsync a fastq over to pnap for ${RNASAMPLEID} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
+		echo Failed to rsync a fastq over to dback for ${RNASAMPLEID} >> Salmon_Fail
+		echo Failed to rsync a fastq over to dback for ${RNASAMPLEID} >> Kallisto_Fail 
+		echo Failed to rsync a fastq over to dback for ${RNASAMPLEID} | tee -a ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/{ensembl74_cDNA,ensembl74_GTF,ensembl74_GTF_V7.2}/Salmon_Fail 
+		echo Failed to rsync a fastq over to dback for ${RNASAMPLEID} | tee -a ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/{ensembl74_cDNA,ensembl74_GTF}/Kallisto_Fail
+		echo Failed to rsync a fastq over to dback for ${RNASAMPLEID} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
 		exit 1
-        fi
+	elif [ "$STATUS" -ne "0" ] && [ ${TOPHATONLY} = 1 ]
+	then
+		echo Failed to rsync R1 fastq over to dback for ${RNASAMPLEID} >> TopHatFusion_Fail
+		exit 1
+	else
+		FASTQR1+=("${fastqBASE}_R1_001.fastq.gz")
+	fi
 
 	if [ $LINKFLAG -ne 0 ]
-        then
-                ssh ${USER}@pnap-data2.tgen.org " rsync ${fastq}_R2_001.fastq.gz /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/"
-        else
-                ssh ${USER}@pnap-data2.tgen.org " ln -s ${fastq}_R2_001.fastq.gz /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${fastqBASE}_R2_001.fastq.gz "
-        fi
+	then
+		ssh ${USER}@dback-data2.tgen.org " rsync ${fastq}_R2_001.fastq.gz /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/"
+		STATUS=$?
+	else
+		ssh ${USER}@dback-data2.tgen.org " ln -s ${fastq}_R2_001.fastq.gz /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${fastqBASE}_R2_001.fastq.gz "
+		STATUS=$?
+	fi
 
-        if [ "$?" -ne "0" ]
-        then
-        	rm Salmon_In_Progress
-                rm Kallisto_In_Progress
-                rm ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/{ensembl74_cDNA,ensembl74_GTF,ensembl74_GTF_V7.2}/Salmon_In_Progress
-                rm ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/{ensembl74_cDNA,ensembl74_GTF}/Kallisto_In_Progress
-                echo Failed to rsync a fastq over to pnap for ${RNASAMPLEID} >> Salmon_Fail
-                echo Failed to rsync a fastq over to pnap for ${RNASAMPLEID} >> Kallisto_Fail
-                echo Failed to rsync a fastq over to pnap for ${RNASAMPLEID} | tee -a ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/{ensembl74_cDNA,ensembl74_GTF,ensembl74_GTF_V7.2}/Salmon_Fail
-                echo Failed to rsync a fastq over to pnap for ${RNASAMPLEID} | tee -a ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/{ensembl74_cDNA,ensembl74_GTF}/Kallisto_Fail
-                echo Failed to rsync a fastq over to pnap for ${RNASAMPLEID} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
-                exit 1
+	if [ "$STATUS" -ne "0" ] && [ ${TOPHATONLY} = 0 ]
+	then
+		rm Salmon_In_Progress
+		rm Kallisto_In_Progress
+		rm ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/{ensembl74_cDNA,ensembl74_GTF,ensembl74_GTF_V7.2}/Salmon_In_Progress
+		rm ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/{ensembl74_cDNA,ensembl74_GTF}/Kallisto_In_Progress
+		echo Failed to rsync a fastq over to dback for ${RNASAMPLEID} >> Salmon_Fail
+		echo Failed to rsync a fastq over to dback for ${RNASAMPLEID} >> Kallisto_Fail
+		echo Failed to rsync a fastq over to dback for ${RNASAMPLEID} | tee -a ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/{ensembl74_cDNA,ensembl74_GTF,ensembl74_GTF_V7.2}/Salmon_Fail
+		echo Failed to rsync a fastq over to dback for ${RNASAMPLEID} | tee -a ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/{ensembl74_cDNA,ensembl74_GTF}/Kallisto_Fail
+		echo Failed to rsync a fastq over to dback for ${RNASAMPLEID} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
+		exit 1
+	elif [ "$STATUS" -ne "0" ] && [ ${TOPHATONLY} = 1 ]
+	then
+		echo Failed to rsync R2 fastq over to dback for ${RNASAMPLEID} >> TopHatFusion_Fail
+		exit 1
+	else
+		FASTQR2+=("${fastqBASE}_R2_001.fastq.gz")
 	fi
 done
 
+FASTQR1LIST=`echo ${FASTQR1[@]} | sed 's/\s/@/g'`
 
-### Start pbs jobs on pnap
+FASTQR2LIST=`echo ${FASTQR2[@]} | sed 's/\s/@/g'`
+
+
+### Start pbs jobs on dback
 
 # Salmon cDNA
 
 DIR=/scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}
 
-ssh ${USER}@pnap-login1.tgen.org "cd ${DIR} ; qsub -v SAMPLE=${RNASAMPLEID},STARTDIR="${STARTDIR}",RNATYPE="${RNATYPE}",ASSAY="${ASSAY}",RNASAMPLEID="${RNASAMPLEID}",LIBTYPE="${LIBTYPE}",PATIENT_NAME="${PATIENT_NAME}",RNACHECK="${RNACHECK}" ${JOBSDIR}/salmon_cDNA.pbs " 
+if [ ${TOPHATONLY} = 1 ]
+then
+	ssh ${USER}@dback-login1.tgen.org "source /etc/profile ; cd ${DIR} ; sbatch -n 1 -N 1 --cpus-per-task 16 --mem-per-cpu 3000 --output ${HOME}/STD_OUT/%x_${RNASAMPLEID}_%j.out --export FASTQR1LIST=${FASTQR1LIST},FASTQR2LIST=${FASTQR2LIST},DIR=${DIR},BASEDIR=${BASEDIR},JOBSDIR=${JOBSDIR},SAMPLE=${RNASAMPLEID},STARTDIR="${STARTDIR}",RNATYPE="${RNATYPE}",ASSAY="${ASSAY}",RNASAMPLEID="${RNASAMPLEID}",LIBTYPE="${LIBTYPE}",PATIENT_NAME="${PATIENT_NAME}",RNACHECK="${RNACHECK}" ${JOBSDIR}/tophatFusion_plus_post.pbs "
+	
+	if [ $? -ne 0 ]
+	then
+		echo Failed to start the tophatfusion job for ${RNASAMPLEID} >> TopHatFusion_Fail
+		exit 1
+	fi
+
+	exit 0
+fi
+
+ssh ${USER}@dback-login1.tgen.org "source /etc/profile ; cd ${DIR} ; sbatch -n 1 -N 1 --cpus-per-task 16 --output ${HOME}/STD_OUT/%x_${RNASAMPLEID}_%j.out --export DIR=${DIR},BASEDIR=${BASEDIR},JOBSDIR=${JOBSDIR},SAMPLE=${RNASAMPLEID},STARTDIR="${STARTDIR}",RNATYPE="${RNATYPE}",ASSAY="${ASSAY}",RNASAMPLEID="${RNASAMPLEID}",LIBTYPE="${LIBTYPE}",PATIENT_NAME="${PATIENT_NAME}",RNACHECK="${RNACHECK}" ${JOBSDIR}/salmon_cDNA.pbs " 
 
 if [ $? -ne 0 ]
 then
@@ -108,7 +153,7 @@ fi
 
 # Salmon GTF
 
-ssh ${USER}@pnap-login1.tgen.org "cd ${DIR} ; qsub -v SAMPLE=${RNASAMPLEID},STARTDIR="${STARTDIR}",RNATYPE="${RNATYPE}",ASSAY="${ASSAY}",RNASAMPLEID="${RNASAMPLEID}",LIBTYPE="${LIBTYPE}",PATIENT_NAME="${PATIENT_NAME}",RNACHECK="${RNACHECK}" ${JOBSDIR}/salmon_GTF.pbs "
+ssh ${USER}@dback-login1.tgen.org "source /etc/profile ; cd ${DIR} ; sbatch -n 1 -N 1 --cpus-per-task 16 --output ${HOME}/STD_OUT/%x_${RNASAMPLEID}_%j.out --export DIR=${DIR},BASEDIR=${BASEDIR},JOBSDIR=${JOBSDIR},SAMPLE=${RNASAMPLEID},STARTDIR="${STARTDIR}",RNATYPE="${RNATYPE}",ASSAY="${ASSAY}",RNASAMPLEID="${RNASAMPLEID}",LIBTYPE="${LIBTYPE}",PATIENT_NAME="${PATIENT_NAME}",RNACHECK="${RNACHECK}" ${JOBSDIR}/salmon_GTF.pbs "
 
 if [ $? -ne 0 ]
 then
@@ -121,7 +166,7 @@ fi
 
 # Salmon GTF V7.2
 
-ssh ${USER}@pnap-login1.tgen.org "cd ${DIR} ; qsub -v SAMPLE=${RNASAMPLEID},STARTDIR="${STARTDIR}",RNATYPE="${RNATYPE}",ASSAY="${ASSAY}",RNASAMPLEID="${RNASAMPLEID}",LIBTYPE="${LIBTYPE}",PATIENT_NAME="${PATIENT_NAME}",RNACHECK="${RNACHECK}" ${JOBSDIR}/salmon_GTF_v7.2.pbs "
+ssh ${USER}@dback-login1.tgen.org "source /etc/profile ; cd ${DIR} ; sbatch -n 1 -N 1 --cpus-per-task 16 --output ${HOME}/STD_OUT/%x_${RNASAMPLEID}_%j.out --export DIR=${DIR},BASEDIR=${BASEDIR},JOBSDIR=${JOBSDIR},SAMPLE=${RNASAMPLEID},STARTDIR="${STARTDIR}",RNATYPE="${RNATYPE}",ASSAY="${ASSAY}",RNASAMPLEID="${RNASAMPLEID}",LIBTYPE="${LIBTYPE}",PATIENT_NAME="${PATIENT_NAME}",RNACHECK="${RNACHECK}" ${JOBSDIR}/salmon_GTF_v7.2.pbs "
 
 if [ $? -ne 0 ]
 then
@@ -135,7 +180,7 @@ fi
 
 # Kallisto cDNA
 
-ssh ${USER}@pnap-login1.tgen.org "cd ${DIR} ; qsub -v SAMPLE=${RNASAMPLEID},STARTDIR="${STARTDIR}",RNATYPE="${RNATYPE}",ASSAY="${ASSAY}",RNASAMPLEID="${RNASAMPLEID}",LIBTYPE="${LIBTYPE}",PATIENT_NAME="${PATIENT_NAME}",RNACHECK="${RNACHECK}" ${JOBSDIR}/kallisto_cDNA.pbs "
+ssh ${USER}@dback-login1.tgen.org "source /etc/profile ; cd ${DIR} ; sbatch -n 1 -N 1 --cpus-per-task 16 --output ${HOME}/STD_OUT/%x_${RNASAMPLEID}_%j.out --export DIR=${DIR},BASEDIR=${BASEDIR},JOBSDIR=${JOBSDIR},SAMPLE=${RNASAMPLEID},STARTDIR="${STARTDIR}",RNATYPE="${RNATYPE}",ASSAY="${ASSAY}",RNASAMPLEID="${RNASAMPLEID}",LIBTYPE="${LIBTYPE}",PATIENT_NAME="${PATIENT_NAME}",RNACHECK="${RNACHECK}" ${JOBSDIR}/kallisto_cDNA.pbs "
 
 if [ $? -ne 0 ]
 then
@@ -148,7 +193,7 @@ fi
 
 # Kallisto GTF
 
-ssh ${USER}@pnap-login1.tgen.org "cd ${DIR} ; qsub -v SAMPLE=${RNASAMPLEID},STARTDIR="${STARTDIR}",RNATYPE="${RNATYPE}",ASSAY="${ASSAY}",RNASAMPLEID="${RNASAMPLEID}",LIBTYPE="${LIBTYPE}",PATIENT_NAME="${PATIENT_NAME}",RNACHECK="${RNACHECK}" ${JOBSDIR}/kallisto_GTF.pbs "
+ssh ${USER}@dback-login1.tgen.org "source /etc/profile ; cd ${DIR} ; sbatch -n 1 -N 1 --cpus-per-task 16 --output ${HOME}/STD_OUT/%x_${RNASAMPLEID}_%j.out --export DIR=${DIR},BASEDIR=${BASEDIR},JOBSDIR=${JOBSDIR},SAMPLE=${RNASAMPLEID},STARTDIR="${STARTDIR}",RNATYPE="${RNATYPE}",ASSAY="${ASSAY}",RNASAMPLEID="${RNASAMPLEID}",LIBTYPE="${LIBTYPE}",PATIENT_NAME="${PATIENT_NAME}",RNACHECK="${RNACHECK}" ${JOBSDIR}/kallisto_GTF.pbs "
 
 if [ $? -ne 0 ]
 then

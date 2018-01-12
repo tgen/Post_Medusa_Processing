@@ -1,11 +1,12 @@
 #!/bin/bash
-#PBS -l nodes=1:ppn=16
-#PBS -N Salmon_GTF_V7.2
-#PBS -l walltime=48:00:00
-#PBS -j oe
-#PBS -o ${HOME}/STD_OUT/${PBS_JOBNAME}_${RNASAMPLEID}_${PBS_JOBID}.out
+#SBATCH --job-name="Salmon_GTF_V7.2"
+#SBATCH --time=4:00:00 
+#SBATCH -n 1
+#SBATCH -N 1
+#SBATCH --cpus-per-task 16
+#SBATCH --mail-user=${USER}@tgen.org
 
-cd $PBS_O_WORKDIR
+cd $DIR
 
 #####################################################
 ##
@@ -15,7 +16,7 @@ cd $PBS_O_WORKDIR
 
 SALMON_BINARY=/home/achristofferson/local/Salmon-0.7.2_linux_x86_64/bin/salmon
 SALMON_INDEX_GTF=/home/achristofferson/salmon_index/Homo_sapiens_number_fix.GRCh37.74.gtf.hs37d5.EGFRvIII_v7.2.fa.index
-GTF=/home/tgenref/pecan/ensembl_v74/Homo_sapiens.GRCh37.74.gtf.hs37d5.EGFRvIII.gtf
+GTF=/home/tgenref/homo_sapiens/grch37_hg19/hs37d5_tgen/gene_model/ensembl_v74//Homo_sapiens.GRCh37.74.gtf.hs37d5.EGFRvIII.gtf
 
 # Generate a variable with each R1 and R2 fastq in the same order
 
@@ -70,7 +71,7 @@ ${SALMON_BINARY} quant \
 
 if [ "$?" -ne 0 ]
 then
-        ssh ${USER}@172.19.1.222 "cd ${STARTDIR}/${PATIENT_NAME} ; \
+        ssh ${USER}@10.48.73.17 "cd ${STARTDIR}/${PATIENT_NAME} ; \
                 rm ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/ensembl74_GTF_V7.2/Salmon_In_Progress ; \
                 echo Salmon failed for ${RNASAMPLEID} >> ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/ensembl74_GTF_V7.2/Salmon_Fail ; \
                 echo Salmon failed for ${RNASAMPLEID} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org"
@@ -81,8 +82,8 @@ else
 	mv quant.genes.sf ${SAMPLE}_salmon_e74GTF_genes.sf
 	mv quant.sf ${SAMPLE}_salmon_e74GTF_transcripts.sf
 
-	ENST_TO_FILTER=/home/tgenref/pecan/post_central_pipe_processing/post_medusa_V1.0/ENST_to_filter_out_of_salmon_V7.2_TPM_results.txt
-	ENSG_TO_ENST_MAP=/home/tgenref/pecan/post_central_pipe_processing/post_medusa_V1.0/ENSG_to_ENST_map.txt
+	ENST_TO_FILTER=${BASEDIR}/ENST_to_filter_out_of_salmon_V7.2_TPM_results.txt
+	ENSG_TO_ENST_MAP=${BASEDIR}/ENSG_to_ENST_map.txt
 
 	# Remove unwanted ENST
         awk -F'\t' 'FNR == NR {a[$1]=$1;next} !($1 in a) { OFS = "\t" ; print $0 }' ${ENST_TO_FILTER} ${SAMPLE}_salmon_e74GTF_transcripts.sf > filtered_quant.sf
@@ -105,16 +106,16 @@ else
 
 	DIR=`pwd`
 
-	ssh ${USER}@172.19.1.222 "rsync -r ${DIR} ${STARTDIR}/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/ "
+	ssh ${USER}@10.48.73.17 "rsync -r ${DIR} ${STARTDIR}/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/ "
 
         if [ $? -ne 0 ]
         then
-                ssh ${USER}@172.19.1.222 "rm ${STARTDIR}/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/ensembl74_GTF_V7.2/Salmon_In_Progress ; \
+                ssh ${USER}@10.48.73.17 "rm ${STARTDIR}/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/ensembl74_GTF_V7.2/Salmon_In_Progress ; \
                         echo Failed to rsync salmon dir to isilon for ${RNASAMPLEID} >> ${STARTDIR}/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/ensembl74_GTF_V7.2/Salmon_Fail ; \
                         echo Failed to rsync salmon dir to isilon for ${RNASAMPLEID} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org"
 
         else
-                ssh ${USER}@172.19.1.222 "rm ${STARTDIR}/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/ensembl74_GTF_V7.2/Salmon_In_Progress ; \
+                ssh ${USER}@10.48.73.17 "rm ${STARTDIR}/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/ensembl74_GTF_V7.2/Salmon_In_Progress ; \
                         touch ${STARTDIR}/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/ensembl74_GTF_V7.2/Salmon_Complete ; \
                         COMPLETE=0 ; \
                         for RSAMPLE in \`echo ${RNACHECK} |sed 's/@/\n/g'\`

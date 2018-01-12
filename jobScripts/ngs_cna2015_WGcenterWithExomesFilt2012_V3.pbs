@@ -1,39 +1,54 @@
 #!/bin/bash
 ##### Author: Jessica Aldrich #####
 ##### Parameterized PBS Script ####
-#PBS -S /bin/bash
-#PBS -N cna2015_filt2012
-#PBS -l walltime=12:00:00
-#PBS -l nodes=1:ppn=2
-#PBS -M ${USER}@tgen.org
-#PBS -m a
-#PBS -j oe
-#PBS -o ${HOME}/STD_OUT/${PBS_JOBNAME}_${OFILE}_${PBS_JOBID}.out
+#SBATCH --job-name="cna2015_filt2012"
+#SBATCH --time=12:00:00 
+#SBATCH -n 1
+#SBATCH -N 1
+#SBATCH --cpus-per-task 2
+#SBATCH --mail-user=${USER}@tgen.org
 
-module load VCFtools/0.1.10
+# Does not currently exits. going to use newer version
+#module load VCFtools/0.1.10
+module load VCFtools/0.1.13
+
+# Perl was missing List/MoreUtils.pm using newer version.
 module load perl/5.14.2
-#module load MCR/8.3
-module load MCR/9.0
-module load R/3.0.0
+#module load perl/5.24.1
 
-export PERL5LIB=$PERL5LIB:/home/jaldrich/perl5/lib/perl5
+module load MCR/9.0
+module load BEDTools/2.26.0
+
+# Does not currently exits.  going to use newer version
+#module load R/3.0.0
+module load R/3.4.1
+
+export PERL5LIB=$PERL5LIB:/home/jaldrich/perl5/lib/perl5:/usr/lib64/perl5/vendor_perl
 
 #MCRPATH=/packages/MCR/8.3/v83
-MCRPATH=/packages/MCR/9.0/v90
+MCRPATH=/packages/MCR/9.0
 
-cd $PBS_O_WORKDIR
 cd ${DIR}
 
-SAMPATH="/packages/samtools/0.1.18/samtools"
-TARGETSFILE=/home/tgenref/pecan/cna_manual/CNA_type2_and_pos35_filter_X_fixed.txt
-EXTENSIONS=/home/tgenref/pecan/post_central_pipe_processing/post_medusa_V1.0/save_recipe.txt
-ZTABLE="/home/tgenref/pecan/cna_manual/ztable.txt"
-CCDSLIST="/home/tgenref/pecan/ensembl_v74/Homo_sapiens.GRCh37.74.gtf.hs37d5.EGFRvIII.gtf"
+CNAPATH="/home/tgenref/binaries/tconut/mmrf_pegasusCNA"
+
+# Does not currently exits.  going to use newer version
+#SAMPATH="/packages/samtools/0.1.18/samtools"
+SAMPATH="/home/achristofferson/local/samtools-1.6"
+
+TARGETSFILE=/home/tgenref/binaries/tconut/mmrf_pegasusCNA/CNA_type2_and_pos35_filter_X_fixed.txt
+EXTENSIONS=${BASEDIR}/save_recipe.txt
+CNAPATH="/home/tgenref/binaries/tconut/mmrf_pegasusCNA"
+ZTABLE="${CNAPATH}/ztable.txt"
+CCDSLIST="/home/tgenref/homo_sapiens/grch37_hg19/hs37d5_tgen/gene_model/ensembl_v74/Homo_sapiens.GRCh37.74.gtf.hs37d5.EGFRvIII.gtf"
 
 # Gender testing variables
-SNPSIFT=/home/jkeats/local/snpEff_v3.6c/snpEff/SnpSift.jar
-DBSNP_VCF=/home/tgenref/pipeline_v0.3/gatk_bundle_2.5/b37/dbsnp_137.b37.vcf
-GENDER_GRAPH_R=/home/tgenref/pecan/post_central_pipe_processing/post_medusa_V1.0/jobScripts/Gender_Graph.R
+# Changing to current version in personal directory due to permissions
+#SNPSIFT=/home/jkeats/local/snpEff_v3.6c/snpEff/SnpSift.jar
+SNPSIFT=/home/achristofferson/local/snpEff_4.2_2015-12-05/SnpSift.jar
+
+DBSNP_VCF=/home/tgenref/homo_sapiens/grch37_hg19/public_databases/dbsnp/b137/dbsnp_137.b37.vcf
+GENDER_GRAPH_R=${JOBSDIR}/Gender_Graph.R
 
 FAILED=0
 
@@ -46,12 +61,12 @@ then
         FAILED=1
 fi
 
-mv ${VCF} ${VCF}.original
+mv ${VCF} ${VCF}.origina
 mv ${VCF}.temp.vcf ${VCF}
 
 # Filter out pos35, waterfall type 2
 
-cat ${VCF} | java -jar ${SNPSIFT} intervals /home/tgenref/pecan/cna_manual/CNA_type2_and_pos35_filter_X_fixed_intervals_to_keep_X_Y.bed > ${VCF}.temp.vcf
+cat ${VCF} | java -jar ${SNPSIFT} intervals /home/tgenref/binaries/tconut/mmrf_pegasusCNA/CNA_type2_and_pos35_filter_X_fixed_intervals_to_keep_X_Y.bed > ${VCF}.temp.vcf
 
 if [ $? -ne 0 ]
 then
@@ -130,7 +145,7 @@ TUMORX=`cat ${TUMORSAMPLE}.proj.md.jr.bam.picHSMetrics|grep -v ^#|grep -v ^BAIT 
 echo $TUMORX
 
 ##parse merged VCF
-/home/tgenref/pecan/cna_manual/parseHC_VCF_BAF.pl ${VCF}.filtered.original ${NORMALSAMPLE} ${TUMORSAMPLE}
+/home/tgenref/binaries/tconut/mmrf_pegasusCNA/parseHC_VCF_BAF.pl ${VCF}.filtered.original ${NORMALSAMPLE} ${TUMORSAMPLE}
 
 if [ $? -ne 0 ]
 then
@@ -139,7 +154,7 @@ fi
 
 # parse filtered to pos35 and type2 HC VCF for Hets
 
-/home/tgenref/pecan/cna_manual/parseHC_VCF_Hets.pl ${VCF} ${NORMALSAMPLE} ${TUMORSAMPLE}
+/home/tgenref/binaries/tconut/mmrf_pegasusCNA/parseHC_VCF_Hets.pl ${VCF} ${NORMALSAMPLE} ${TUMORSAMPLE}
 
 if [ $? -ne 0 ]
 then
@@ -161,16 +176,16 @@ hetDev=0.025             #   <<<< THIS CAN BE ADJUSTED - allowable deviation fro
 readDepth=100
 #readDepth=$( echo "$hetDepthN * 3" | bc )            #   <<<< THIS CAN BE ADJUSTED - min number of counts >>>
 echo $readDepth
-echo "time /home/tgenref/pecan/cna_manual/pegasusCNA_MMRF/run_ngsCNA.sh ${MCRPATH} ${NORMALDAT} ${TUMORDAT} ${OFILE}_filt ${HETFILE} ${smWin} ${fcThresh} ${assayID} ${res} ${readDepth} ${maxGap} ${hetDepth} ${hetDev} ${TARGETSFILE}"
+echo "time /home/tgenref/binaries/tconut/mmrf_pegasusCNA/pegasusCNA_MMRF/run_ngsCNA.sh ${MCRPATH} ${NORMALDAT} ${TUMORDAT} ${OFILE}_filt ${HETFILE} ${smWin} ${fcThresh} ${assayID} ${res} ${readDepth} ${maxGap} ${hetDepth} ${hetDev} ${TARGETSFILE}"
 
-time /home/tgenref/pecan/cna_manual/pegasusCNA_MMRF/run_ngsCNA.sh ${MCRPATH} ${NORMALDAT} ${TUMORDAT} ${OFILE}_filt ${HETFILE} ${smWin} ${fcThresh} ${assayID} ${res} ${readDepth} ${maxGap} ${hetDepthN} ${hetDepthT} ${hetDev} ${TARGETSFILE}
+time /home/tgenref/binaries/tconut/mmrf_pegasusCNA/pegasusCNA_MMRF/run_ngsCNA.sh ${MCRPATH} ${NORMALDAT} ${TUMORDAT} ${OFILE}_filt ${HETFILE} ${smWin} ${fcThresh} ${assayID} ${res} ${readDepth} ${maxGap} ${hetDepthN} ${hetDepthT} ${hetDev} ${TARGETSFILE}
 
 if [ $? -ne 0 ]
 then
         FAILED=1
 fi
 
-Rscript --vanilla /home/tgenref/pecan/cna_manual/validateCNAHets_v2.R ${OFILE}_filt.hets.tsv 
+Rscript --vanilla /home/tgenref/binaries/tconut/mmrf_pegasusCNA/validateCNAHets_v2.R ${OFILE}_filt.hets.tsv 
 
 if [ $? -ne 0 ]
 then
@@ -188,7 +203,7 @@ then
 	mv temp.cna.tsv ${OFILE}_filt.cna.tsv
 
 	## CBS segmentation
-	Rscript --vanilla /home/tgenref/pecan/cna_manual/runDNAcopyV4_filt2012.R ${OFILE}_filt.cna.tsv ${OFILE}_filt.seg
+	Rscript --vanilla /home/tgenref/binaries/tconut/mmrf_pegasusCNA/runDNAcopyV4_filt2012.R ${OFILE}_filt.cna.tsv ${OFILE}_filt.seg
 
 	if [ $? -ne 0 ]
 	then
@@ -206,13 +221,13 @@ else
 
 	mv merged.vcf.txt merged.vcf.txt.original
 
-	/home/achristofferson/local/bedtools-v2.25.0/bin/bedtools intersect -v -a merged.vcf.bed -b CNA_intervals_to_exclude_merged.bed > temp
+	bedtools intersect -v -a merged.vcf.bed -b CNA_intervals_to_exclude_merged.bed > temp
 	
 	awk -F'\t' 'BEGIN { OFS = "\t" ; print "Chromosome     Position        NormalReadDepth NormalRefAllele NormalAltAllele TumorReadDepth  TumorRefAllele  TumorAltAllele" } { OFS = "\t" ; print $1,$2,$4,$5,$6,$7,$8,$9 }' temp > merged.vcf.txt
 
 	rm temp
 
-	time /home/tgenref/pecan/cna_manual/pegasusCNA_MMRF/run_ngsCNA.sh ${MCRPATH} ${NORMALDAT} ${TUMORDAT} ${OFILE}_filt ${HETFILE} ${smWin} ${fcThresh} ${assayID} ${res} ${readDepth} ${maxGap} ${hetDepthN} ${hetDepthT} ${hetDev} ${TARGETSFILE}
+	time /home/tgenref/binaries/tconut/mmrf_pegasusCNA/pegasusCNA_MMRF/run_ngsCNA.sh ${MCRPATH} ${NORMALDAT} ${TUMORDAT} ${OFILE}_filt ${HETFILE} ${smWin} ${fcThresh} ${assayID} ${res} ${readDepth} ${maxGap} ${hetDepthN} ${hetDepthT} ${hetDev} ${TARGETSFILE}
 
 	if [ $? -ne 0 ]
         then
@@ -224,7 +239,7 @@ else
         mv temp.cna.tsv ${OFILE}_filt.cna.tsv
 	
 	## CBS segmentation
-	Rscript --vanilla /home/tgenref/pecan/cna_manual/runDNAcopyV4_filt2012.R ${OFILE}_filt.cna.tsv ${OFILE}_filt.seg
+	Rscript --vanilla /home/tgenref/binaries/tconut/mmrf_pegasusCNA/runDNAcopyV4_filt2012.R ${OFILE}_filt.cna.tsv ${OFILE}_filt.seg
 
 	if [ $? -ne 0 ]
         then
@@ -233,7 +248,7 @@ else
 fi  
 
 ##plotting
-Rscript --vanilla /home/tgenref/pecan/cna_manual/plotCGH.R ${OFILE}_filt.cna.tsv ${OFILE}_filt.amp.tsv ${OFILE}_filt.del.tsv ${OFILE}_filt
+Rscript --vanilla /home/tgenref/binaries/tconut/mmrf_pegasusCNA/plotCGH.R ${OFILE}_filt.cna.tsv ${OFILE}_filt.amp.tsv ${OFILE}_filt.del.tsv ${OFILE}_filt
 
 if [ $? -ne 0 ]
 then
@@ -242,7 +257,7 @@ fi
 
 if [ -f ${OFILE}_filt.hets.tsv ]
 then
-	Rscript --vanilla /home/tgenref/pecan/cna_manual/plotCGHwithHets.R ${OFILE}_filt.cna.tsv ${OFILE}_filt.amp.tsv ${OFILE}_filt.del.tsv ${OFILE}_filt.hets.tsv ${OFILE}_filt_withhets
+	Rscript --vanilla /home/tgenref/binaries/tconut/mmrf_pegasusCNA/plotCGHwithHets.R ${OFILE}_filt.cna.tsv ${OFILE}_filt.amp.tsv ${OFILE}_filt.del.tsv ${OFILE}_filt.hets.tsv ${OFILE}_filt_withhets
 
 	if [ $? -ne 0 ]
 	then
@@ -250,14 +265,14 @@ then
 	fi
 fi
 
-Rscript --vanilla /home/tgenref/pecan/cna_manual/plotBAF.R baf.txt ${OFILE}_filt.baf
+Rscript --vanilla /home/tgenref/binaries/tconut/mmrf_pegasusCNA/plotBAF.R baf.txt ${OFILE}_filt.baf
 
 if [ $? -ne 0 ]
 then
         FAILED=1
 fi
 
-Rscript --vanilla /home/tgenref/pecan/cna_manual/runDNAcopyBAF.R baf.txt ${OFILE}_filt.baf
+Rscript --vanilla /home/tgenref/binaries/tconut/mmrf_pegasusCNA/runDNAcopyBAF.R baf.txt ${OFILE}_filt.baf
 
 if [ $? -ne 0 ]
 then
@@ -268,14 +283,14 @@ fi
 DUPTHRESH=0.58     #   <<<< THIS CAN BE ADJUSTED - Amplification Threshold - log2 fold-change >>>>
 DELTHRESH=-0.99    #   <<<< THIS CAN BE ADJUSTED - Deletion Threshold - log2 fold-change >>>>
 
-/home/tgenref/pecan/cna_manual/annotSeg.pl ${CCDSLIST} ${OFILE}_filt.cna.seg ${DUPTHRESH} ${DELTHRESH}
+/home/tgenref/binaries/tconut/mmrf_pegasusCNA/annotSeg.pl ${CCDSLIST} ${OFILE}_filt.cna.seg ${DUPTHRESH} ${DELTHRESH}
 
 if [ $? -ne 0 ]
 then
         FAILED=1
 fi
 
-/home/tgenref/pecan/cna_manual/validateCNAVariantsVCF.pl ${OFILE}_filt.cna.seg.vcf baf.txt ${ZTABLE}
+/home/tgenref/binaries/tconut/mmrf_pegasusCNA/validateCNAVariantsVCF.pl ${OFILE}_filt.cna.seg.vcf baf.txt ${ZTABLE}
 
 if [ $? -ne 0 ]
 then
@@ -284,10 +299,10 @@ fi
 
 # Plot Linear CNA and BAF
 module load MCR/9.0
-MCR9PATH=/packages/MCR/9.0/v90
+MCR9PATH=/packages/MCR/9.0
 
 # Removed error capture on Matlab image creation. The image may not be created depending on sample quality and depth.
-/home/tgenref/pecan/cna_manual/plotLinearCNA/run_plotLinearCNAandBAF.sh ${MCR9PATH} ${OFILE}_filt.cna.tsv baf.txt ${OFILE}_filt.cnaBAF.png
+/home/tgenref/binaries/tconut/mmrf_pegasusCNA/plotLinearCNA/run_plotLinearCNAandBAF.sh ${MCR9PATH} ${OFILE}_filt.cna.tsv baf.txt ${OFILE}_filt.cnaBAF.png
 
 if [ $? -ne 0 ]
 then
@@ -296,7 +311,7 @@ fi
 
 # Plot Linear CNA and Abs BAF
 
-/home/tgenref/pecan/cna_manual/plotLinearCNAabsBAF/run_plotLinearCNAandAbsBAF.sh ${MCR9PATH} ${OFILE}_filt.cna.tsv baf.txt ${OFILE}_filt.cnaAbsBAF.png
+/home/tgenref/binaries/tconut/mmrf_pegasusCNA/plotLinearCNAabsBAF/run_plotLinearCNAandAbsBAF.sh ${MCR9PATH} ${OFILE}_filt.cna.tsv baf.txt ${OFILE}_filt.cnaAbsBAF.png
 
 # Removed error capture on Matlab image creation. The image may not be created depending on sample quality and depth.
 if [ $? -ne 0 ]
@@ -318,7 +333,7 @@ then
                 for fileToSave in `find ${DIR} -name "*$extToCopy"`
                 do
                         fileName=`basename $fileToSave`
-                        ssh ${USER}@172.19.1.222 "rsync $fileToSave ${STARTDIR}/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_filt2012/ "
+                        ssh ${USER}@10.48.73.18 "rsync $fileToSave ${STARTDIR}/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_filt2012/ "
 
                         if [ $? -ne 0 ]
                         then
@@ -327,21 +342,21 @@ then
                 done
         done
 
-        ssh ${USER}@172.19.1.222 "rsync ${DIR}/${NORMALSAMPLEG}.proj.md.jr.bam.clc.cln.dat.cnaStats ${STARTDIR}/${PATIENT_NAME}/stats/${NORMALSAMPLEG}.proj.md.jr.bam.clc.cln.dat.cnaManualFilt2012Stats"
+        ssh ${USER}@10.48.73.18 "rsync ${DIR}/${NORMALSAMPLEG}.proj.md.jr.bam.clc.cln.dat.cnaStats ${STARTDIR}/${PATIENT_NAME}/stats/${NORMALSAMPLEG}.proj.md.jr.bam.clc.cln.dat.cnaManualFilt2012Stats"
 
         if [ $? -ne 0 ]
         then
                 fails=1
         fi
 
-        ssh ${USER}@172.19.1.222 "rsync ${DIR}/${TUMORSAMPLEG}.proj.md.jr.bam.clc.cln.dat.cnaStats ${STARTDIR}/${PATIENT_NAME}/stats/${TUMORSAMPLEG}.proj.md.jr.bam.clc.cln.dat.cnaManualFilt2012Stats"
+        ssh ${USER}@10.48.73.18 "rsync ${DIR}/${TUMORSAMPLEG}.proj.md.jr.bam.clc.cln.dat.cnaStats ${STARTDIR}/${PATIENT_NAME}/stats/${TUMORSAMPLEG}.proj.md.jr.bam.clc.cln.dat.cnaManualFilt2012Stats"
 
         if [ $? -ne 0 ]
         then
                 fails=1
         fi
 else
-        ssh ${USER}@172.19.1.222 "rm ${STARTDIR}/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_filt2012/CNA_Manual_In_Progress ; \
+        ssh ${USER}@10.48.73.18 "rm ${STARTDIR}/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_filt2012/CNA_Manual_In_Progress ; \
                 rm ${STARTDIR}/${PATIENT_NAME}/CNA_Manual_In_Progress ; \
                 touch ${STARTDIR}/${PATIENT_NAME}/CNA_Manual_Fail ; \
 		echo CNA pbs script failed for ${GENOMEPAIR} >> ${STARTDIR}/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_filt2012/CNA_Manual_Fail ; \
@@ -351,7 +366,7 @@ fi
 
 if [ $fails -eq 0 ] && [ ${FAILED} = 0 ]
 then
-        ssh ${USER}@172.19.1.222 "rm ${STARTDIR}/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_filt2012/CNA_Manual_In_Progress ; \
+        ssh ${USER}@10.48.73.18 "rm ${STARTDIR}/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_filt2012/CNA_Manual_In_Progress ; \
                 touch ${STARTDIR}/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_filt2012/CNA_Manual_Complete ; \
                 COMPLETE=0 ; \
                 for XPAIR in \`echo ${EXPECTEDPAIRS} | sed 's/@/\n/g'\`
@@ -371,7 +386,7 @@ else
 	if [ $fails -ne 0 ] && [ ${FAILED} = 0 ]
         then
 
-        	ssh ${USER}@172.19.1.222 "rm ${STARTDIR}/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_filt2012/CNA_Manual_In_Progress ; \
+        	ssh ${USER}@10.48.73.18 "rm ${STARTDIR}/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_filt2012/CNA_Manual_In_Progress ; \
                 	echo CNA pbs script failed to rsync back to isilon for ${GENOMEPAIR} >> ${STARTDIR}/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_filt2012/CNA_Manual_Fail ; \
                 	echo CNA pbs script failed to rsync back to isilon for ${GENOMEPAIR} | mailx -s "Post_Medusa_Processing_Failed" ${USER}@tgen.org "
 
