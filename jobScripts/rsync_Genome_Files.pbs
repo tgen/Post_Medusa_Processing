@@ -7,7 +7,7 @@
 
 cd $PBS_O_WORKDIR
 
-JOBSDIR=/home/tgenref/pecan/post_central_pipe_processing/post_medusa_V1.0/jobScripts
+JOBSDIR=${BASEDIR}/jobScripts
 
 if [[ ${DELLY} == "No" ]]
 then
@@ -16,7 +16,7 @@ then
 
 	#{{{ 
 
-	ssh ${USER}@pnap-data1.tgen.org "mkdir -p /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_unfi"
+	ssh ${USER}@dback-data1.tgen.org "mkdir -p /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_unfi"
 
 	if [ $? -ne 0 ]
 	then
@@ -24,15 +24,15 @@ then
 		rm cna_manual_2016/${GENOMEPAIR}_filt2012/CNA_Manual_In_Progress
 		rm cna_manual_2016/${GENOMEPAIR}_filt2016/CNA_Manual_In_Progress
 	        rm cna_manual_2016/${GENOMEPAIR}_unfi/CNA_Manual_In_Progress
-		echo Failed to make cna_manual unfi dir on pnap ${GENOMEPAIR} >> CNA_Manual_Fail
-	        echo Failed to make cna_manual unfi dir on pnap ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2012/CNA_Manual_Fail
-		echo Failed to make cna_manual unfi dir on pnap ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2016/CNA_Manual_Fail
-	        echo Failed to make cna_manual unfi dir on pnap ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_unfi/CNA_Manual_Fail
-	        echo Failed to make cna_manual unfi dir on pnap ${GENOMEPAIR} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
+		echo Failed to make cna_manual unfi dir on dback ${GENOMEPAIR} >> CNA_Manual_Fail
+	        echo Failed to make cna_manual unfi dir on dback ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2012/CNA_Manual_Fail
+		echo Failed to make cna_manual unfi dir on dback ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2016/CNA_Manual_Fail
+	        echo Failed to make cna_manual unfi dir on dback ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_unfi/CNA_Manual_Fail
+	        echo Failed to make cna_manual unfi dir on dback ${GENOMEPAIR} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
 	        exit 1
 	fi
 
-	ssh ${USER}@pnap-data1.tgen.org "mkdir -p /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_filt2012"
+	ssh ${USER}@dback-data1.tgen.org "mkdir -p /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_filt2012"
 
 	if [ $? -ne 0 ]
 	then
@@ -40,15 +40,15 @@ then
 	        rm cna_manual_2016/${GENOMEPAIR}_filt2012/CNA_Manual_In_Progress
 		rm cna_manual_2016/${GENOMEPAIR}_filt2016/CNA_Manual_In_Progress
 	        rm cna_manual_2016/${GENOMEPAIR}_unfi/CNA_Manual_In_Progress
-		echo Failed to make cna_manual filt dir on pnap ${GENOMEPAIR} >> CNA_Manual_Fail
-	        echo Failed to make cna_manual filt dir on pnap ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2012/CNA_Manual_Fail
-		echo Failed to make cna_manual filt dir on pnap ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2016/CNA_Manual_Fail
-	        echo Failed to make cna_manual filt dir on pnap ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_unfi/CNA_Manual_Fail
-	        echo Failed to make cna_manual filt dir on pnap ${GENOMEPAIR} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
+		echo Failed to make cna_manual filt dir on dback ${GENOMEPAIR} >> CNA_Manual_Fail
+	        echo Failed to make cna_manual filt dir on dback ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2012/CNA_Manual_Fail
+		echo Failed to make cna_manual filt dir on dback ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2016/CNA_Manual_Fail
+	        echo Failed to make cna_manual filt dir on dback ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_unfi/CNA_Manual_Fail
+	        echo Failed to make cna_manual filt dir on dback ${GENOMEPAIR} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
 	        exit 1
 	fi
 
-	ssh ${USER}@pnap-data1.tgen.org "mkdir -p /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_filt2016"
+	ssh ${USER}@dback-data1.tgen.org "mkdir -p /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_filt2016"
 
 	if [ $? -ne 0 ]
 	then
@@ -56,22 +56,22 @@ then
 	        rm cna_manual_2016/${GENOMEPAIR}_filt2012/CNA_Manual_In_Progress
 		rm cna_manual_2016/${GENOMEPAIR}_filt2016/CNA_Manual_In_Progress
 	        rm cna_manual_2016/${GENOMEPAIR}_unfi/CNA_Manual_In_Progress
-	        echo Failed to make cna_manual filt dir on pnap ${GENOMEPAIR} >> CNA_Manual_Fail
-	        echo Failed to make cna_manual filt dir on pnap ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2012/CNA_Manual_Fail
-		echo Failed to make cna_manual filt dir on pnap ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2016/CNA_Manual_Fail
-	        echo Failed to make cna_manual filt dir on pnap ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_unfi/CNA_Manual_Fail
-	        echo Failed to make cna_manual filt dir on pnap ${GENOMEPAIR} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
+	        echo Failed to make cna_manual filt dir on dback ${GENOMEPAIR} >> CNA_Manual_Fail
+	        echo Failed to make cna_manual filt dir on dback ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2012/CNA_Manual_Fail
+		echo Failed to make cna_manual filt dir on dback ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2016/CNA_Manual_Fail
+	        echo Failed to make cna_manual filt dir on dback ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_unfi/CNA_Manual_Fail
+	        echo Failed to make cna_manual filt dir on dback ${GENOMEPAIR} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
 	        exit 1
 	fi
 
 	#}}}
 
-	# Rsync needed files over to pnap for Unfiltered analysis
+	# Rsync needed files over to dback for Unfiltered analysis
 
 	#{{{
 
 	# Genome Normal Dat
-	ssh ${USER}@pnap-data1.tgen.org "rsync ${STARTDIR}/${PATIENT_NAME}/${NASSAY}/${NORMALSAMPLEG}/${NORMALDAT} /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_unfi/ "
+	ssh ${USER}@dback-data1.tgen.org "rsync ${STARTDIR}/${PATIENT_NAME}/${NASSAY}/${NORMALSAMPLEG}/${NORMALDAT} /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_unfi/ "
 
 	if [ $? -ne 0 ]
 	then
@@ -79,17 +79,17 @@ then
 	        rm cna_manual_2016/${GENOMEPAIR}_filt2012/CNA_Manual_In_Progress
 		rm cna_manual_2016/${GENOMEPAIR}_filt2016/CNA_Manual_In_Progress
 	        rm cna_manual_2016/${GENOMEPAIR}_unfi/CNA_Manual_In_Progress
-		echo Failed to rsync Normal Dat file to pnap for unfi ${GENOMEPAIR} >> CNA_Manual_Fail
-		echo Failed to rsync Normal Dat file to pnap for unfi ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2012/CNA_Manual_Fail
-		echo Failed to rsync Normal Dat file to pnap for unfi ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2016/CNA_Manual_Fail
-		echo Failed to rsync Normal Dat file to pnap for unfi ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_unfi/CNA_Manual_Fail
-		echo Failed to rsync Normal Dat file to pnap for unfi ${GENOMEPAIR} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
+		echo Failed to rsync Normal Dat file to dback for unfi ${GENOMEPAIR} >> CNA_Manual_Fail
+		echo Failed to rsync Normal Dat file to dback for unfi ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2012/CNA_Manual_Fail
+		echo Failed to rsync Normal Dat file to dback for unfi ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2016/CNA_Manual_Fail
+		echo Failed to rsync Normal Dat file to dback for unfi ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_unfi/CNA_Manual_Fail
+		echo Failed to rsync Normal Dat file to dback for unfi ${GENOMEPAIR} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
 		exit 1
 	fi
 
 	# Genome Tumor Dat
 
-	ssh ${USER}@pnap-data1.tgen.org "rsync ${STARTDIR}/${PATIENT_NAME}/${TASSAY}/${TUMORSAMPLEG}/${TUMORDAT} /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_unfi/ "
+	ssh ${USER}@dback-data1.tgen.org "rsync ${STARTDIR}/${PATIENT_NAME}/${TASSAY}/${TUMORSAMPLEG}/${TUMORDAT} /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_unfi/ "
 
 	if [ $? -ne 0 ]
 	then
@@ -97,17 +97,17 @@ then
 	        rm cna_manual_2016/${GENOMEPAIR}_filt2012/CNA_Manual_In_Progress
 		rm cna_manual_2016/${GENOMEPAIR}_filt2016/CNA_Manual_In_Progress
 	        rm cna_manual_2016/${GENOMEPAIR}_unfi/CNA_Manual_In_Progress
-		echo Failed to rsync Tumor Dat file to pnap for unfi ${GENOMEPAIR} >> CNA_Manual_Fail
-		echo Failed to rsync Tumor Dat file to pnap for unfi ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2012/CNA_Manual_Fail
-		echo Failed to rsync Tumor Dat file to pnap for unfi ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2016/CNA_Manual_Fail
-		echo Failed to rsync Tumor Dat file to pnap for unfi ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_unfi/CNA_Manual_Fail
-		echo Failed to rsync Tumor Dat file to pnap for unfi ${GENOMEPAIR} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
+		echo Failed to rsync Tumor Dat file to dback for unfi ${GENOMEPAIR} >> CNA_Manual_Fail
+		echo Failed to rsync Tumor Dat file to dback for unfi ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2012/CNA_Manual_Fail
+		echo Failed to rsync Tumor Dat file to dback for unfi ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2016/CNA_Manual_Fail
+		echo Failed to rsync Tumor Dat file to dback for unfi ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_unfi/CNA_Manual_Fail
+		echo Failed to rsync Tumor Dat file to dback for unfi ${GENOMEPAIR} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
 		exit 1
 	fi
 
 	# Exome Normal HS Metrics
 
-	ssh ${USER}@pnap-data1.tgen.org "rsync ${STARTDIR}/${PATIENT_NAME}/stats/${NORMALSAMPLE}.proj.md.jr.bam.picHSMetrics /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_unfi/ "
+	ssh ${USER}@dback-data1.tgen.org "rsync ${STARTDIR}/${PATIENT_NAME}/stats/${NORMALSAMPLE}.proj.md.jr.bam.picHSMetrics /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_unfi/ "
 
 	if [ $? -ne 0 ]
 	then
@@ -115,17 +115,17 @@ then
 	        rm cna_manual_2016/${GENOMEPAIR}_filt2012/CNA_Manual_In_Progress
 		rm cna_manual_2016/${GENOMEPAIR}_filt2016/CNA_Manual_In_Progress
 	        rm cna_manual_2016/${GENOMEPAIR}_unfi/CNA_Manual_In_Progress
-		echo Failed to rsync Normal HS metrics file to pnap for unfi ${GENOMEPAIR} >> CNA_Manual_Fail
-		echo Failed to rsync Normal HS metrics file to pnap for unfi ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2012/CNA_Manual_Fail
-		echo Failed to rsync Normal HS metrics file to pnap for unfi ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2016/CNA_Manual_Fail
-		echo Failed to rsync Normal HS metrics file to pnap for unfi ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_unfi/CNA_Manual_Fail
-		echo Failed to rsync Normal HS metrics file to pnap for unfi ${GENOMEPAIR} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
+		echo Failed to rsync Normal HS metrics file to dback for unfi ${GENOMEPAIR} >> CNA_Manual_Fail
+		echo Failed to rsync Normal HS metrics file to dback for unfi ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2012/CNA_Manual_Fail
+		echo Failed to rsync Normal HS metrics file to dback for unfi ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2016/CNA_Manual_Fail
+		echo Failed to rsync Normal HS metrics file to dback for unfi ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_unfi/CNA_Manual_Fail
+		echo Failed to rsync Normal HS metrics file to dback for unfi ${GENOMEPAIR} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
 		exit 1
 	fi
 
 	# Exome Tumor HS Metrics
 
-	ssh ${USER}@pnap-data1.tgen.org "rsync ${STARTDIR}/${PATIENT_NAME}/stats/${TUMORSAMPLE}.proj.md.jr.bam.picHSMetrics /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_unfi/ "
+	ssh ${USER}@dback-data1.tgen.org "rsync ${STARTDIR}/${PATIENT_NAME}/stats/${TUMORSAMPLE}.proj.md.jr.bam.picHSMetrics /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_unfi/ "
 
 	if [ $? -ne 0 ]
 	then
@@ -133,17 +133,17 @@ then
 	        rm cna_manual_2016/${GENOMEPAIR}_filt2012/CNA_Manual_In_Progress
 		rm cna_manual_2016/${GENOMEPAIR}_filt2016/CNA_Manual_In_Progress
 	        rm cna_manual_2016/${GENOMEPAIR}_unfi/CNA_Manual_In_Progress
-		echo Failed to rsync Tumor HS metrics file to pnap for unfi ${GENOMEPAIR} >> CNA_Manual_Fail
-		echo Failed to rsync Tumor HS metrics file to pnap for unfi ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2012/CNA_Manual_Fail
-		echo Failed to rsync Tumor HS metrics file to pnap for unfi ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2016/CNA_Manual_Fail
-		echo Failed to rsync Tumor HS metrics file to pnap for unfi ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_unfi/CNA_Manual_Fail
-		echo Failed to rsync Tumor HS metrics file to pnap for unfi ${GENOMEPAIR} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
+		echo Failed to rsync Tumor HS metrics file to dback for unfi ${GENOMEPAIR} >> CNA_Manual_Fail
+		echo Failed to rsync Tumor HS metrics file to dback for unfi ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2012/CNA_Manual_Fail
+		echo Failed to rsync Tumor HS metrics file to dback for unfi ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2016/CNA_Manual_Fail
+		echo Failed to rsync Tumor HS metrics file to dback for unfi ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_unfi/CNA_Manual_Fail
+		echo Failed to rsync Tumor HS metrics file to dback for unfi ${GENOMEPAIR} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
 		exit 1
 	fi
 
 	# Exome HC VCF
 
-	ssh ${USER}@pnap-data1.tgen.org "rsync ${STARTDIR}/${PATIENT_NAME}/hc/${EXOMEPAIR}/*.HC_All.snpEff.vcf /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_unfi/ "
+	ssh ${USER}@dback-data1.tgen.org "rsync ${STARTDIR}/${PATIENT_NAME}/hc/${EXOMEPAIR}/*.HC_All.snpEff.vcf /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_unfi/ "
 
 	if [ $? -ne 0 ]
 	then
@@ -151,22 +151,22 @@ then
 	        rm cna_manual_2016/${GENOMEPAIR}_filt2012/CNA_Manual_In_Progress
 		rm cna_manual_2016/${GENOMEPAIR}_filt2016/CNA_Manual_In_Progress
 	        rm cna_manual_2016/${GENOMEPAIR}_unfi/CNA_Manual_In_Progress
-		echo Failed to rsync HC VCF file to pnap for unfi ${GENOMEPAIR} >> CNA_Manual_Fail
-		echo Failed to rsync HC VCF file to pnap for unfi ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2012/CNA_Manual_Fail
-		echo Failed to rsync HC VCF file to pnap for unfi ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2016/CNA_Manual_Fail
-		echo Failed to rsync HC VCF file to pnap for unfi ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_unfi/CNA_Manual_Fail
-		echo Failed to rsync HC VCF file to pnap for unfi ${GENOMEPAIR} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
+		echo Failed to rsync HC VCF file to dback for unfi ${GENOMEPAIR} >> CNA_Manual_Fail
+		echo Failed to rsync HC VCF file to dback for unfi ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2012/CNA_Manual_Fail
+		echo Failed to rsync HC VCF file to dback for unfi ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2016/CNA_Manual_Fail
+		echo Failed to rsync HC VCF file to dback for unfi ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_unfi/CNA_Manual_Fail
+		echo Failed to rsync HC VCF file to dback for unfi ${GENOMEPAIR} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
 		exit 1
 	fi
 
 	#}}}
 
-	### Rsync needed files over to pnap for Filtered 2012 analysis
+	### Rsync needed files over to dback for Filtered 2012 analysis
 
 	#{{{
 
 	# Genome Normal Dat
-	ssh ${USER}@pnap-data1.tgen.org "rsync ${STARTDIR}/${PATIENT_NAME}/${NASSAY}/${NORMALSAMPLEG}/${NORMALDAT} /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_filt2012/ "
+	ssh ${USER}@dback-data1.tgen.org "rsync ${STARTDIR}/${PATIENT_NAME}/${NASSAY}/${NORMALSAMPLEG}/${NORMALDAT} /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_filt2012/ "
 
 	if [ $? -ne 0 ]
 	then
@@ -174,17 +174,17 @@ then
 	        rm cna_manual_2016/${GENOMEPAIR}_filt2012/CNA_Manual_In_Progress
 		rm cna_manual_2016/${GENOMEPAIR}_filt2016/CNA_Manual_In_Progress
 	        rm cna_manual_2016/${GENOMEPAIR}_unfi/CNA_Manual_In_Progress
-	        echo Failed to rsync Normal Dat file to pnap for filt ${GENOMEPAIR} >> CNA_Manual_Fail
-	        echo Failed to rsync Normal Dat file to pnap for filt ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2012/CNA_Manual_Fail
-		echo Failed to rsync Normal Dat file to pnap for filt ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2016/CNA_Manual_Fail
-	        echo Failed to rsync Normal Dat file to pnap for filt ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_unfi/CNA_Manual_Fail
-	        echo Failed to rsync Normal Dat file to pnap for filt ${GENOMEPAIR} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
+	        echo Failed to rsync Normal Dat file to dback for filt ${GENOMEPAIR} >> CNA_Manual_Fail
+	        echo Failed to rsync Normal Dat file to dback for filt ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2012/CNA_Manual_Fail
+		echo Failed to rsync Normal Dat file to dback for filt ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2016/CNA_Manual_Fail
+	        echo Failed to rsync Normal Dat file to dback for filt ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_unfi/CNA_Manual_Fail
+	        echo Failed to rsync Normal Dat file to dback for filt ${GENOMEPAIR} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
 	        exit 1
 	fi
 
 	# Genome Tumor Dat
 
-	ssh ${USER}@pnap-data1.tgen.org "rsync ${STARTDIR}/${PATIENT_NAME}/${TASSAY}/${TUMORSAMPLEG}/${TUMORDAT} /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_filt2012/ "
+	ssh ${USER}@dback-data1.tgen.org "rsync ${STARTDIR}/${PATIENT_NAME}/${TASSAY}/${TUMORSAMPLEG}/${TUMORDAT} /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_filt2012/ "
 
 	if [ $? -ne 0 ]
 	then
@@ -192,17 +192,17 @@ then
 	        rm cna_manual_2016/${GENOMEPAIR}_filt2012/CNA_Manual_In_Progress
 		rm cna_manual_2016/${GENOMEPAIR}_filt2016/CNA_Manual_In_Progress
 	        rm cna_manual_2016/${GENOMEPAIR}_unfi/CNA_Manual_In_Progress
-	        echo Failed to rsync Tumor Dat file to pnap for filt ${GENOMEPAIR} >> CNA_Manual_Fail
-	        echo Failed to rsync Tumor Dat file to pnap for filt ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2012/CNA_Manual_Fail
-		echo Failed to rsync Tumor Dat file to pnap for filt ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2016/CNA_Manual_Fail
-	        echo Failed to rsync Tumor Dat file to pnap for filt ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_unfi/CNA_Manual_Fail
-	        echo Failed to rsync Tumor Dat file to pnap for filt ${GENOMEPAIR} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
+	        echo Failed to rsync Tumor Dat file to dback for filt ${GENOMEPAIR} >> CNA_Manual_Fail
+	        echo Failed to rsync Tumor Dat file to dback for filt ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2012/CNA_Manual_Fail
+		echo Failed to rsync Tumor Dat file to dback for filt ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2016/CNA_Manual_Fail
+	        echo Failed to rsync Tumor Dat file to dback for filt ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_unfi/CNA_Manual_Fail
+	        echo Failed to rsync Tumor Dat file to dback for filt ${GENOMEPAIR} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
 	        exit 1
 	fi
 
 	# Exome Normal HS Metrics
 
-	ssh ${USER}@pnap-data1.tgen.org "rsync ${STARTDIR}/${PATIENT_NAME}/stats/${NORMALSAMPLE}.proj.md.jr.bam.picHSMetrics /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_filt2012/ "
+	ssh ${USER}@dback-data1.tgen.org "rsync ${STARTDIR}/${PATIENT_NAME}/stats/${NORMALSAMPLE}.proj.md.jr.bam.picHSMetrics /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_filt2012/ "
 
 	if [ $? -ne 0 ]
 	then
@@ -210,17 +210,17 @@ then
 	        rm cna_manual_2016/${GENOMEPAIR}_filt2012/CNA_Manual_In_Progress
 		rm cna_manual_2016/${GENOMEPAIR}_filt2016/CNA_Manual_In_Progress
 	        rm cna_manual_2016/${GENOMEPAIR}_unfi/CNA_Manual_In_Progress
-	        echo Failed to rsync Normal HS metrics file to pnap for filt ${GENOMEPAIR} >> CNA_Manual_Fail
-	        echo Failed to rsync Normal HS metrics file to pnap for filt ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2012/CNA_Manual_Fail
-		echo Failed to rsync Normal HS metrics file to pnap for filt ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2016/CNA_Manual_Fail
-	        echo Failed to rsync Normal HS metrics file to pnap for filt ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_unfi/CNA_Manual_Fail
-	        echo Failed to rsync Normal HS metrics file to pnap for filt ${GENOMEPAIR} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
+	        echo Failed to rsync Normal HS metrics file to dback for filt ${GENOMEPAIR} >> CNA_Manual_Fail
+	        echo Failed to rsync Normal HS metrics file to dback for filt ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2012/CNA_Manual_Fail
+		echo Failed to rsync Normal HS metrics file to dback for filt ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2016/CNA_Manual_Fail
+	        echo Failed to rsync Normal HS metrics file to dback for filt ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_unfi/CNA_Manual_Fail
+	        echo Failed to rsync Normal HS metrics file to dback for filt ${GENOMEPAIR} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
 	        exit 1
 	fi
 
 	# Exome Tumor HS Metrics
 
-	ssh ${USER}@pnap-data1.tgen.org "rsync ${STARTDIR}/${PATIENT_NAME}/stats/${TUMORSAMPLE}.proj.md.jr.bam.picHSMetrics /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_filt2012/ "
+	ssh ${USER}@dback-data1.tgen.org "rsync ${STARTDIR}/${PATIENT_NAME}/stats/${TUMORSAMPLE}.proj.md.jr.bam.picHSMetrics /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_filt2012/ "
 
 	if [ $? -ne 0 ]
 	then
@@ -228,17 +228,17 @@ then
 	        rm cna_manual_2016/${GENOMEPAIR}_filt2012/CNA_Manual_In_Progress
 		rm cna_manual_2016/${GENOMEPAIR}_filt2016/CNA_Manual_In_Progress
 	        rm cna_manual_2016/${GENOMEPAIR}_unfi/CNA_Manual_In_Progress
-	        echo Failed to rsync Tumor HS metrics file to pnap for filt ${GENOMEPAIR} >> CNA_Manual_Fail
-	        echo Failed to rsync Tumor HS metrics file to pnap for filt ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2012/CNA_Manual_Fail
-		echo Failed to rsync Tumor HS metrics file to pnap for filt ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2016/CNA_Manual_Fail
-	        echo Failed to rsync Tumor HS metrics file to pnap for filt ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_unfi/CNA_Manual_Fail
-	        echo Failed to rsync Tumor HS metrics file to pnap for filt ${GENOMEPAIR} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
+	        echo Failed to rsync Tumor HS metrics file to dback for filt ${GENOMEPAIR} >> CNA_Manual_Fail
+	        echo Failed to rsync Tumor HS metrics file to dback for filt ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2012/CNA_Manual_Fail
+		echo Failed to rsync Tumor HS metrics file to dback for filt ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2016/CNA_Manual_Fail
+	        echo Failed to rsync Tumor HS metrics file to dback for filt ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_unfi/CNA_Manual_Fail
+	        echo Failed to rsync Tumor HS metrics file to dback for filt ${GENOMEPAIR} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
 	        exit 1
 	fi
 
 	# Exome HC VCF
 
-	ssh ${USER}@pnap-data1.tgen.org "rsync ${STARTDIR}/${PATIENT_NAME}/hc/${EXOMEPAIR}/*.HC_All.snpEff.vcf /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_filt2012/ "
+	ssh ${USER}@dback-data1.tgen.org "rsync ${STARTDIR}/${PATIENT_NAME}/hc/${EXOMEPAIR}/*.HC_All.snpEff.vcf /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_filt2012/ "
 
 	if [ $? -ne 0 ]
 	then
@@ -246,22 +246,22 @@ then
 	        rm cna_manual_2016/${GENOMEPAIR}_filt2012/CNA_Manual_In_Progress
 		rm cna_manual_2016/${GENOMEPAIR}_filt2016/CNA_Manual_In_Progress
 	        rm cna_manual_2016/${GENOMEPAIR}_unfi/CNA_Manual_In_Progress
-	        echo Failed to rsync HC VCF file to pnap for filt ${GENOMEPAIR} >> CNA_Manual_Fail
-	        echo Failed to rsync HC VCF file to pnap for filt ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2012/CNA_Manual_Fail
-		echo Failed to rsync HS VCF file to pnap for filt ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2016/CNA_Manual_Fail
-	        echo Failed to rsync HC VCF file to pnap for filt ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_unfi/CNA_Manual_Fail
-	        echo Failed to rsync HC VCF file to pnap for filt ${GENOMEPAIR} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
+	        echo Failed to rsync HC VCF file to dback for filt ${GENOMEPAIR} >> CNA_Manual_Fail
+	        echo Failed to rsync HC VCF file to dback for filt ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2012/CNA_Manual_Fail
+		echo Failed to rsync HS VCF file to dback for filt ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2016/CNA_Manual_Fail
+	        echo Failed to rsync HC VCF file to dback for filt ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_unfi/CNA_Manual_Fail
+	        echo Failed to rsync HC VCF file to dback for filt ${GENOMEPAIR} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
 	        exit 1
 	fi
 
 	#}}} 
 
-	### Rsync needed files over to pnap for Filtered 2016 analysis
+	### Rsync needed files over to dback for Filtered 2016 analysis
 
 	#{{{
 
 	# Genome Normal Dat
-	ssh ${USER}@pnap-data1.tgen.org "rsync ${STARTDIR}/${PATIENT_NAME}/${NASSAY}/${NORMALSAMPLEG}/${NORMALDAT} /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_filt2016/ "
+	ssh ${USER}@dback-data1.tgen.org "rsync ${STARTDIR}/${PATIENT_NAME}/${NASSAY}/${NORMALSAMPLEG}/${NORMALDAT} /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_filt2016/ "
 
 	if [ $? -ne 0 ]
 	then
@@ -269,17 +269,17 @@ then
 	        rm cna_manual_2016/${GENOMEPAIR}_filt2012/CNA_Manual_In_Progress
 		rm cna_manual_2016/${GENOMEPAIR}_filt2016/CNA_Manual_In_Progress
 	        rm cna_manual_2016/${GENOMEPAIR}_unfi/CNA_Manual_In_Progress
-	        echo Failed to rsync Normal Dat file to pnap for filt ${GENOMEPAIR} >> CNA_Manual_Fail
-	        echo Failed to rsync Normal Dat file to pnap for filt ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2012/CNA_Manual_Fail
-		echo Failed to rsync Normal Dat file to pnap for filt ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2016/CNA_Manual_Fail
-	        echo Failed to rsync Normal Dat file to pnap for filt ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_unfi/CNA_Manual_Fail
-	        echo Failed to rsync Normal Dat file to pnap for filt ${GENOMEPAIR} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
+	        echo Failed to rsync Normal Dat file to dback for filt ${GENOMEPAIR} >> CNA_Manual_Fail
+	        echo Failed to rsync Normal Dat file to dback for filt ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2012/CNA_Manual_Fail
+		echo Failed to rsync Normal Dat file to dback for filt ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2016/CNA_Manual_Fail
+	        echo Failed to rsync Normal Dat file to dback for filt ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_unfi/CNA_Manual_Fail
+	        echo Failed to rsync Normal Dat file to dback for filt ${GENOMEPAIR} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
 	        exit 1
 	fi
 
 	# Genome Tumor Dat
 
-	ssh ${USER}@pnap-data1.tgen.org "rsync ${STARTDIR}/${PATIENT_NAME}/${TASSAY}/${TUMORSAMPLEG}/${TUMORDAT} /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_filt2016/ "
+	ssh ${USER}@dback-data1.tgen.org "rsync ${STARTDIR}/${PATIENT_NAME}/${TASSAY}/${TUMORSAMPLEG}/${TUMORDAT} /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_filt2016/ "
 
 	if [ $? -ne 0 ]
 	then
@@ -287,17 +287,17 @@ then
 	        rm cna_manual_2016/${GENOMEPAIR}_filt2012/CNA_Manual_In_Progress
 		rm cna_manual_2016/${GENOMEPAIR}_filt2016/CNA_Manual_In_Progress
 	        rm cna_manual_2016/${GENOMEPAIR}_unfi/CNA_Manual_In_Progress
-	        echo Failed to rsync Tumor Dat file to pnap for filt ${GENOMEPAIR} >> CNA_Manual_Fail
-	        echo Failed to rsync Tumor Dat file to pnap for filt ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2012/CNA_Manual_Fail
-		echo Failed to rsync Tumor Dat file to pnap for filt ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2016/CNA_Manual_Fail
-	        echo Failed to rsync Tumor Dat file to pnap for filt ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_unfi/CNA_Manual_Fail
-	        echo Failed to rsync Tumor Dat file to pnap for filt ${GENOMEPAIR} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
+	        echo Failed to rsync Tumor Dat file to dback for filt ${GENOMEPAIR} >> CNA_Manual_Fail
+	        echo Failed to rsync Tumor Dat file to dback for filt ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2012/CNA_Manual_Fail
+		echo Failed to rsync Tumor Dat file to dback for filt ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2016/CNA_Manual_Fail
+	        echo Failed to rsync Tumor Dat file to dback for filt ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_unfi/CNA_Manual_Fail
+	        echo Failed to rsync Tumor Dat file to dback for filt ${GENOMEPAIR} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
 	        exit 1
 	fi
 
 	# Exome Normal HS Metrics
 
-	ssh ${USER}@pnap-data1.tgen.org "rsync ${STARTDIR}/${PATIENT_NAME}/stats/${NORMALSAMPLE}.proj.md.jr.bam.picHSMetrics /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_filt2016/ "
+	ssh ${USER}@dback-data1.tgen.org "rsync ${STARTDIR}/${PATIENT_NAME}/stats/${NORMALSAMPLE}.proj.md.jr.bam.picHSMetrics /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_filt2016/ "
 
 	if [ $? -ne 0 ]
 	then
@@ -305,17 +305,17 @@ then
 	        rm cna_manual_2016/${GENOMEPAIR}_filt2012/CNA_Manual_In_Progress
 		rm cna_manual_2016/${GENOMEPAIR}_filt2016/CNA_Manual_In_Progress
 	        rm cna_manual_2016/${GENOMEPAIR}_unfi/CNA_Manual_In_Progress
-	        echo Failed to rsync Normal HS metrics file to pnap for filt ${GENOMEPAIR} >> CNA_Manual_Fail
-	        echo Failed to rsync Normal HS metrics file to pnap for filt ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2012/CNA_Manual_Fail
-		echo Failed to rsync Normal HS metrics file to pnap for filt ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2016/CNA_Manual_Fail
-	        echo Failed to rsync Normal HS metrics file to pnap for filt ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_unfi/CNA_Manual_Fail
-	        echo Failed to rsync Normal HS metrics file to pnap for filt ${GENOMEPAIR} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
+	        echo Failed to rsync Normal HS metrics file to dback for filt ${GENOMEPAIR} >> CNA_Manual_Fail
+	        echo Failed to rsync Normal HS metrics file to dback for filt ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2012/CNA_Manual_Fail
+		echo Failed to rsync Normal HS metrics file to dback for filt ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2016/CNA_Manual_Fail
+	        echo Failed to rsync Normal HS metrics file to dback for filt ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_unfi/CNA_Manual_Fail
+	        echo Failed to rsync Normal HS metrics file to dback for filt ${GENOMEPAIR} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
 	        exit 1
 	fi
 
 	# Exome Tumor HS Metrics
 
-	ssh ${USER}@pnap-data1.tgen.org "rsync ${STARTDIR}/${PATIENT_NAME}/stats/${TUMORSAMPLE}.proj.md.jr.bam.picHSMetrics /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_filt2016/ "
+	ssh ${USER}@dback-data1.tgen.org "rsync ${STARTDIR}/${PATIENT_NAME}/stats/${TUMORSAMPLE}.proj.md.jr.bam.picHSMetrics /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_filt2016/ "
 
 	if [ $? -ne 0 ]
 	then
@@ -323,17 +323,17 @@ then
 	        rm cna_manual_2016/${GENOMEPAIR}_filt2012/CNA_Manual_In_Progress
 		rm cna_manual_2016/${GENOMEPAIR}_filt2016/CNA_Manual_In_Progress
 	        rm cna_manual_2016/${GENOMEPAIR}_unfi/CNA_Manual_In_Progress
-	        echo Failed to rsync Tumor HS metrics file to pnap for filt ${GENOMEPAIR} >> CNA_Manual_Fail
-	        echo Failed to rsync Tumor HS metrics file to pnap for filt ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2012/CNA_Manual_Fail
-		echo Failed to rsync Tumor HS metrics file to pnap for filt ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2016/CNA_Manual_Fail
-	        echo Failed to rsync Tumor HS metrics file to pnap for filt ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_unfi/CNA_Manual_Fail
-	        echo Failed to rsync Tumor HS metrics file to pnap for filt ${GENOMEPAIR} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
+	        echo Failed to rsync Tumor HS metrics file to dback for filt ${GENOMEPAIR} >> CNA_Manual_Fail
+	        echo Failed to rsync Tumor HS metrics file to dback for filt ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2012/CNA_Manual_Fail
+		echo Failed to rsync Tumor HS metrics file to dback for filt ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2016/CNA_Manual_Fail
+	        echo Failed to rsync Tumor HS metrics file to dback for filt ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_unfi/CNA_Manual_Fail
+	        echo Failed to rsync Tumor HS metrics file to dback for filt ${GENOMEPAIR} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
 	        exit 1
 	fi
 
 	# Exome HC VCF
 
-	ssh ${USER}@pnap-data1.tgen.org "rsync ${STARTDIR}/${PATIENT_NAME}/hc/${EXOMEPAIR}/*.HC_All.snpEff.vcf /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_filt2016/ "
+	ssh ${USER}@dback-data1.tgen.org "rsync ${STARTDIR}/${PATIENT_NAME}/hc/${EXOMEPAIR}/*.HC_All.snpEff.vcf /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_filt2016/ "
 
 	if [ $? -ne 0 ]
 	then
@@ -341,11 +341,11 @@ then
 	        rm cna_manual_2016/${GENOMEPAIR}_filt2012/CNA_Manual_In_Progress
 		rm cna_manual_2016/${GENOMEPAIR}_filt2016/CNA_Manual_In_Progress
 	        rm cna_manual_2016/${GENOMEPAIR}_unfi/CNA_Manual_In_Progress
-	        echo Failed to rsync HC VCF file to pnap for filt ${GENOMEPAIR} >> CNA_Manual_Fail
-	        echo Failed to rsync HC VCF file to pnap for filt ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2012/CNA_Manual_Fail
-		echo Failed to rsync HC VCF file to pnap for filt ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2016/CNA_Manual_Fail
-	        echo Failed to rsync HC VCF file to pnap for filt ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_unfi/CNA_Manual_Fail
-	        echo Failed to rsync HC VCF file to pnap for filt ${GENOMEPAIR} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
+	        echo Failed to rsync HC VCF file to dback for filt ${GENOMEPAIR} >> CNA_Manual_Fail
+	        echo Failed to rsync HC VCF file to dback for filt ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2012/CNA_Manual_Fail
+		echo Failed to rsync HC VCF file to dback for filt ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_filt2016/CNA_Manual_Fail
+	        echo Failed to rsync HC VCF file to dback for filt ${GENOMEPAIR} >> cna_manual_2016/${GENOMEPAIR}_unfi/CNA_Manual_Fail
+	        echo Failed to rsync HC VCF file to dback for filt ${GENOMEPAIR} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
 	        exit 1
 	fi
 	
@@ -358,7 +358,7 @@ then
 	DIR=/scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_unfi
 
 	# Unfi CNA
-	ssh ${USER}@pnap-login1.tgen.org "cd ${DIR} ; qsub -v STARTDIR="${STARTDIR}",BEDFILE=${BEDFILE},GENOMEPAIR=${GENOMEPAIR},PATIENT_NAME="${PATIENT_NAME}",DIR=${DIR},NORMALSAMPLE=${NORMALSAMPLE},TUMORSAMPLE=${TUMORSAMPLE},VCF="${EXOMEPAIR}.HC_All.snpEff.vcf",NORMALDAT="${NORMALSAMPLEG}.proj.md.jr.bam.clc.cln.dat",TUMORDAT="${TUMORSAMPLEG}.proj.md.jr.bam.clc.cln.dat",NORMALSAMPLEG="${NORMALSAMPLEG}",TUMORSAMPLEG="${TUMORSAMPLEG}",OFILE=${GENOMEPAIR},EXPECTEDPAIRS=${EXPECTEDPAIRS} ${JOBSDIR}/ngs_cna2015_WGcenterWithExomes_V4.pbs "
+	ssh ${USER}@dback-login1.tgen.org "source /etc/profile ; cd ${DIR} ; sbatch -n 1 -N 1 --mem-per-cpu 3000 --cpus-per-task 4 --output ${HOME}/STD_OUT/%x_${GENOMEPAIR}_%j.out --export BASEDIR=${BASEDIR},JOBSDIR=${JOBSDIR},STARTDIR="${STARTDIR}",BEDFILE=${BEDFILE},GENOMEPAIR=${GENOMEPAIR},PATIENT_NAME="${PATIENT_NAME}",DIR=${DIR},NORMALSAMPLE=${NORMALSAMPLE},TUMORSAMPLE=${TUMORSAMPLE},VCF="${EXOMEPAIR}.HC_All.snpEff.vcf",NORMALDAT="${NORMALSAMPLEG}.proj.md.jr.bam.clc.cln.dat",TUMORDAT="${TUMORSAMPLEG}.proj.md.jr.bam.clc.cln.dat",NORMALSAMPLEG="${NORMALSAMPLEG}",TUMORSAMPLEG="${TUMORSAMPLEG}",OFILE=${GENOMEPAIR},EXPECTEDPAIRS=${EXPECTEDPAIRS} ${JOBSDIR}/ngs_cna2015_WGcenterWithExomes_V4.pbs "
 
 	if [ $? -ne 0 ]
 	then
@@ -377,7 +377,7 @@ then
 	DIR=/scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_filt2012
 
 	# Filt CNA
-	ssh ${USER}@pnap-login1.tgen.org "cd ${DIR} ; qsub -v STARTDIR="${STARTDIR}",BEDFILE=${BEDFILE},GENOMEPAIR=${GENOMEPAIR},PATIENT_NAME="${PATIENT_NAME}",DIR=${DIR},NORMALSAMPLE=${NORMALSAMPLE},TUMORSAMPLE=${TUMORSAMPLE},VCF="${EXOMEPAIR}.HC_All.snpEff.vcf",NORMALDAT="${NORMALSAMPLEG}.proj.md.jr.bam.clc.cln.dat",TUMORDAT="${TUMORSAMPLEG}.proj.md.jr.bam.clc.cln.dat",NORMALSAMPLEG="${NORMALSAMPLEG}",TUMORSAMPLEG="${TUMORSAMPLEG}",OFILE=${GENOMEPAIR},EXPECTEDPAIRS=${EXPECTEDPAIRS} ${JOBSDIR}/ngs_cna2015_WGcenterWithExomesFilt2012_V3.pbs "
+	ssh ${USER}@dback-login1.tgen.org "source /etc/profile ; cd ${DIR} ; sbatch -n 1 -N 1 --mem-per-cpu 3000 --cpus-per-task 4 --output ${HOME}/STD_OUT/%x_${GENOMEPAIR}_%j.out --export BASEDIR=${BASEDIR},JOBSDIR=${JOBSDIR},STARTDIR="${STARTDIR}",BEDFILE=${BEDFILE},GENOMEPAIR=${GENOMEPAIR},PATIENT_NAME="${PATIENT_NAME}",DIR=${DIR},NORMALSAMPLE=${NORMALSAMPLE},TUMORSAMPLE=${TUMORSAMPLE},VCF="${EXOMEPAIR}.HC_All.snpEff.vcf",NORMALDAT="${NORMALSAMPLEG}.proj.md.jr.bam.clc.cln.dat",TUMORDAT="${TUMORSAMPLEG}.proj.md.jr.bam.clc.cln.dat",NORMALSAMPLEG="${NORMALSAMPLEG}",TUMORSAMPLEG="${TUMORSAMPLEG}",OFILE=${GENOMEPAIR},EXPECTEDPAIRS=${EXPECTEDPAIRS} ${JOBSDIR}/ngs_cna2015_WGcenterWithExomesFilt2012_V3.pbs "
 
 	if [ $? -ne 0 ]
 	then
@@ -393,7 +393,7 @@ then
 	DIR=/scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_filt2016
 
 	# Filt CNA
-	ssh ${USER}@pnap-login1.tgen.org "cd ${DIR} ; qsub -v STARTDIR="${STARTDIR}",BEDFILE=${BEDFILE},GENOMEPAIR=${GENOMEPAIR},PATIENT_NAME="${PATIENT_NAME}",DIR=${DIR},NORMALSAMPLE=${NORMALSAMPLE},TUMORSAMPLE=${TUMORSAMPLE},VCF="${EXOMEPAIR}.HC_All.snpEff.vcf",NORMALDAT="${NORMALSAMPLEG}.proj.md.jr.bam.clc.cln.dat",TUMORDAT="${TUMORSAMPLEG}.proj.md.jr.bam.clc.cln.dat",NORMALSAMPLEG="${NORMALSAMPLEG}",TUMORSAMPLEG="${TUMORSAMPLEG}",OFILE=${GENOMEPAIR},EXPECTEDPAIRS=${EXPECTEDPAIRS} ${JOBSDIR}/ngs_cna2015_WGcenterWithExomesFilt2016_V3.pbs "
+	ssh ${USER}@dback-login1.tgen.org "source /etc/profile ; cd ${DIR} ; sbatch -n 1 -N 1 --mem-per-cpu 3000 --cpus-per-task 4 --output ${HOME}/STD_OUT/%x_${GENOMEPAIR}_%j.out --export BASEDIR=${BASEDIR},JOBSDIR=${JOBSDIR},STARTDIR="${STARTDIR}",BEDFILE=${BEDFILE},GENOMEPAIR=${GENOMEPAIR},PATIENT_NAME="${PATIENT_NAME}",DIR=${DIR},NORMALSAMPLE=${NORMALSAMPLE},TUMORSAMPLE=${TUMORSAMPLE},VCF="${EXOMEPAIR}.HC_All.snpEff.vcf",NORMALDAT="${NORMALSAMPLEG}.proj.md.jr.bam.clc.cln.dat",TUMORDAT="${TUMORSAMPLEG}.proj.md.jr.bam.clc.cln.dat",NORMALSAMPLEG="${NORMALSAMPLEG}",TUMORSAMPLEG="${TUMORSAMPLEG}",OFILE=${GENOMEPAIR},EXPECTEDPAIRS=${EXPECTEDPAIRS} ${JOBSDIR}/ngs_cna2015_WGcenterWithExomesFilt2016_V3.pbs "
 
 	if [ $? -ne 0 ]
 	then
@@ -412,21 +412,21 @@ then
 
 	DIR=/scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/delly/${GENOMEPAIR}
 
-	ssh ${USER}@pnap-data1.tgen.org "mkdir -p /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/delly/${GENOMEPAIR}"
+	ssh ${USER}@dback-data1.tgen.org "mkdir -p /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/delly/${GENOMEPAIR}"
 
 	if [ $? -ne 0 ]
 	then
 	        rm Delly_In_Progress
 		rm delly/${GENOMEPAIR}/Delly_In_Progress
-		echo Failed to make delly dir on pnap for ${GENOMEPAIR} >> Delly_Fail
-		echo Failed to make delly dir on pnap for ${GENOMEPAIR} >> delly/${GENOMEPAIR}/Delly_Fail
-		echo Failed to make delly dir on pnap for ${GENOMEPAIR} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
+		echo Failed to make delly dir on dback for ${GENOMEPAIR} >> Delly_Fail
+		echo Failed to make delly dir on dback for ${GENOMEPAIR} >> delly/${GENOMEPAIR}/Delly_Fail
+		echo Failed to make delly dir on dback for ${GENOMEPAIR} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
 	        exit 1
 	fi
 
-	### Rsync needed files over to pnap for delly analysis
+	### Rsync needed files over to dback for delly analysis
 
-	ssh ${USER}@pnap-data1.tgen.org " if [ -d \"\` ls -d /scratch/tgenjetstream/centralPipe/projects/${PATIENT_NAME}* | tail -n1 \`\" ] ; then LNDIR=\`ls -d /scratch/tgenjetstream/centralPipe/projects/${PATIENT_NAME}* | tail -n1 \` ; ln -s \${LNDIR}/${TASSAY}/${TUMORSAMPLEG}/${TUMORSAMPLEG}.bwa.final.bam /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/delly/${GENOMEPAIR}/${TUMORSAMPLEG}.bwa.final.bam ; else rsync ${STARTDIR}/${PATIENT_NAME}/${TASSAY}/${TUMORSAMPLEG}/${TUMORSAMPLEG}.bwa.final.bam /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/delly/${GENOMEPAIR}/  ; fi "
+	ssh ${USER}@dback-data1.tgen.org " if [ -d \"\` ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \`\" ] ; then LNDIR=\`ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \` ; ln -s \${LNDIR}/${TASSAY}/${TUMORSAMPLEG}/${TUMORSAMPLEG}.bwa.final.bam /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/delly/${GENOMEPAIR}/${TUMORSAMPLEG}.bwa.final.bam ; else rsync ${STARTDIR}/${PATIENT_NAME}/${TASSAY}/${TUMORSAMPLEG}/${TUMORSAMPLEG}.bwa.final.bam /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/delly/${GENOMEPAIR}/  ; fi "
 
 	if [ $? -ne 0 ]
 	then
@@ -438,7 +438,7 @@ then
         	exit 1
 	fi
 
-	ssh ${USER}@pnap-data1.tgen.org " if [ -d \"\` ls -d /scratch/tgenjetstream/centralPipe/projects/${PATIENT_NAME}* | tail -n1 \`\" ] ; then LNDIR=\`ls -d /scratch/tgenjetstream/centralPipe/projects/${PATIENT_NAME}* | tail -n1 \` ; ln -s \${LNDIR}/${TASSAY}/${TUMORSAMPLEG}/${TUMORSAMPLEG}.bwa.final.bai /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/delly/${GENOMEPAIR}/${TUMORSAMPLEG}.bwa.final.bai ; else rsync ${STARTDIR}/${PATIENT_NAME}/${TASSAY}/${TUMORSAMPLEG}/${TUMORSAMPLEG}.bwa.final.bai /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/delly/${GENOMEPAIR}/  ; fi   "
+	ssh ${USER}@dback-data1.tgen.org " if [ -d \"\` ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \`\" ] ; then LNDIR=\`ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \` ; ln -s \${LNDIR}/${TASSAY}/${TUMORSAMPLEG}/${TUMORSAMPLEG}.bwa.final.bai /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/delly/${GENOMEPAIR}/${TUMORSAMPLEG}.bwa.final.bai ; else rsync ${STARTDIR}/${PATIENT_NAME}/${TASSAY}/${TUMORSAMPLEG}/${TUMORSAMPLEG}.bwa.final.bai /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/delly/${GENOMEPAIR}/  ; fi   "
 
 	if [ $? -ne 0 ]
 	then
@@ -452,7 +452,7 @@ then
 
 
 
-	ssh ${USER}@pnap-data1.tgen.org " if [ -d \"\` ls -d /scratch/tgenjetstream/centralPipe/projects/${PATIENT_NAME}* | tail -n1 \`\" ] ; then LNDIR=\`ls -d /scratch/tgenjetstream/centralPipe/projects/${PATIENT_NAME}* | tail -n1\` ; ln -s \${LNDIR}/${NASSAY}/${NORMALSAMPLEG}/${NORMALSAMPLEG}.bwa.final.bam /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/delly/${GENOMEPAIR}/${NORMALSAMPLEG}.bwa.final.bam ; else rsync ${STARTDIR}/${PATIENT_NAME}/${NASSAY}/${NORMALSAMPLEG}/${NORMALSAMPLEG}.bwa.final.bam /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/delly/${GENOMEPAIR}/  ; fi "
+	ssh ${USER}@dback-data1.tgen.org " if [ -d \"\` ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \`\" ] ; then LNDIR=\`ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1\` ; ln -s \${LNDIR}/${NASSAY}/${NORMALSAMPLEG}/${NORMALSAMPLEG}.bwa.final.bam /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/delly/${GENOMEPAIR}/${NORMALSAMPLEG}.bwa.final.bam ; else rsync ${STARTDIR}/${PATIENT_NAME}/${NASSAY}/${NORMALSAMPLEG}/${NORMALSAMPLEG}.bwa.final.bam /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/delly/${GENOMEPAIR}/  ; fi "
 
 	if [ $? -ne 0 ]
 	then
@@ -464,7 +464,7 @@ then
 	        exit 1
 	fi
 
-	ssh ${USER}@pnap-data1.tgen.org " if [ -d \"\` ls -d /scratch/tgenjetstream/centralPipe/projects/${PATIENT_NAME}* | tail -n1 \`\" ] ; then LNDIR=\`ls -d /scratch/tgenjetstream/centralPipe/projects/${PATIENT_NAME}* | tail -n1\` ; ln -s \${LNDIR}/${NASSAY}/${NORMALSAMPLEG}/${NORMALSAMPLEG}.bwa.final.bai /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/delly/${GENOMEPAIR}/${NORMALSAMPLEG}.bwa.final.bai ; else rsync ${STARTDIR}/${PATIENT_NAME}/${NASSAY}/${NORMALSAMPLEG}/${NORMALSAMPLEG}.bwa.final.bai /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/delly/${GENOMEPAIR}/ ; fi   "
+	ssh ${USER}@dback-data1.tgen.org " if [ -d \"\` ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \`\" ] ; then LNDIR=\`ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1\` ; ln -s \${LNDIR}/${NASSAY}/${NORMALSAMPLEG}/${NORMALSAMPLEG}.bwa.final.bai /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/delly/${GENOMEPAIR}/${NORMALSAMPLEG}.bwa.final.bai ; else rsync ${STARTDIR}/${PATIENT_NAME}/${NASSAY}/${NORMALSAMPLEG}/${NORMALSAMPLEG}.bwa.final.bai /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/delly/${GENOMEPAIR}/ ; fi   "
 
 	if [ $? -ne 0 ]
 	then
@@ -478,17 +478,17 @@ then
 
 	# Start Delly PBS
 
-	ssh ${USER}@pnap-login1.tgen.org "cd ${DIR} ; qsub -v DIR=${DIR},STARTDIR="${STARTDIR}",GENOMEPAIR="${GENOMEPAIR}",PATIENT_NAME="${PATIENT_NAME}",TUMORSAMPLEG="${TUMORSAMPLEG}",NORMALSAMPLEG="${NORMALSAMPLEG}",EXPECTEDPAIRS=${EXPECTEDPAIRS} ${JOBSDIR}/delly.pbs " 
+	ssh ${USER}@dback-login1.tgen.org "source /etc/profile ; cd ${DIR} ; sbatch -n 1 -N 1 --mem-per-cpu 3000 --cpus-per-task 8 --output ${HOME}/STD_OUT/%x_${GENOMEPAIR}_%j.out --export BASEDIR=${BASEDIR},JOBSDIR=${JOBSDIR},DIR=${DIR},STARTDIR="${STARTDIR}",GENOMEPAIR="${GENOMEPAIR}",PATIENT_NAME="${PATIENT_NAME}",TUMORSAMPLEG="${TUMORSAMPLEG}",NORMALSAMPLEG="${NORMALSAMPLEG}",EXPECTEDPAIRS=${EXPECTEDPAIRS} ${JOBSDIR}/delly.pbs " 
 
 	if [ $? -ne 0 ]
-        then
-                rm Delly_In_Progress
-                rm delly/${GENOMEPAIR}/Delly_In_Progress
-                echo Failed to start rsync qsub job for ${GENOMEPAIR} >> Delly_Fail
-                echo Failed to start rsync qsub job for ${GENOMEPAIR} >> delly/${GENOMEPAIR}/Delly_Fail
-                echo Failed to make delly dir on pnap for ${GENOMEPAIR} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
-                exit 1
-        fi
+	then
+		rm Delly_In_Progress
+		rm delly/${GENOMEPAIR}/Delly_In_Progress
+		echo Failed to start sbatch job for ${GENOMEPAIR} >> Delly_Fail
+		echo Failed to start sbatch job for ${GENOMEPAIR} >> delly/${GENOMEPAIR}/Delly_Fail
+		echo Failed to start sbatch job for ${GENOMEPAIR} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
+		exit 1
+	fi
 fi
 
 

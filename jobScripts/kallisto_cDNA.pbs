@@ -1,15 +1,16 @@
 #!/bin/bash
-#PBS -l nodes=1:ppn=16
-#PBS -N Kallisto_cDNA
-#PBS -l walltime=48:00:00
-#PBS -j oe
-#PBS -o ${HOME}/STD_OUT/${PBS_JOBNAME}_${RNASAMPLEID}_${PBS_JOBID}.out
+#SBATCH --job-name="Kallisto_cDNA"
+#SBATCH --time=4:00:00 
+#SBATCH -n 1
+#SBATCH -N 1
+#SBATCH --cpus-per-task 16
+#SBATCH --mail-user=${USER}@tgen.org
 
-cd $PBS_O_WORKDIR
+cd $DIR
 
 # Load kallisto module
-module load kallisto/0.42.4
-module load salmon/0.5.0
+#module load kallisto/0.42.4
+#module load salmon/0.5.0
 
 
 #####################################################
@@ -19,7 +20,7 @@ module load salmon/0.5.0
 #####################################################
 
 #KALLISTO_BINARY=/home/clegendre/tools/kallisto/0.42.4/bin/kallisto
-KALLISTO_BINARY=/home/clegendre/bin/kallisto
+KALLISTO_BINARY=/home/achristofferson/local/kallisto_linux-v0.42.4/kallisto
 KALLISTO_INDEX_cDNA=/home/achristofferson/kallisto_index/Homo_sapiens.GRCh37.74.cdna.hs37d5.fasta.index
 
 # Make fastq list for Kallisto
@@ -34,7 +35,7 @@ ${KALLISTO_BINARY} quant \
 
 if [ "$?" -ne "0" ]
 then
-	ssh ${USER}@172.19.1.222 "cd ${STARTDIR}/${PATIENT_NAME} ; \
+	ssh ${USER}@10.48.73.17 "cd ${STARTDIR}/${PATIENT_NAME} ; \
 		rm ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/ensembl74_cDNA/Kallisto_In_Progress ; \
 		echo Kallisto failed for ${RNASAMPLEID} >> ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/ensembl74_cDNA/Kallisto_Fail ; \
 		echo Kallisto failed for ${RNASAMPLEID} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org"
@@ -46,16 +47,16 @@ else
 
 	DIR=`pwd`
 
-	ssh ${USER}@172.19.1.222 "rsync -r ${DIR} ${STARTDIR}/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/ "
+	ssh ${USER}@10.48.73.17 "rsync -r ${DIR} ${STARTDIR}/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/ "
 
         if [ $? -ne 0 ]
         then
-                ssh ${USER}@172.19.1.222 "rm ${STARTDIR}/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/ensembl74_cDNA/Kallisto_In_Progress ; \
+                ssh ${USER}@10.48.73.17 "rm ${STARTDIR}/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/ensembl74_cDNA/Kallisto_In_Progress ; \
                         echo Failed to rsync kallisto dir to isilon for ${RNASAMPLEID} >> ${STARTDIR}/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/ensembl74_cDNA/Kallisto_Fail ; \
                         echo Failed to rsync kallisto dir to isilon for ${RNASAMPLEID} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org"
 
         else
-                ssh ${USER}@172.19.1.222 "rm ${STARTDIR}/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/ensembl74_cDNA/Kallisto_In_Progress ; \
+                ssh ${USER}@10.48.73.17 "rm ${STARTDIR}/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/ensembl74_cDNA/Kallisto_In_Progress ; \
                         touch ${STARTDIR}/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/ensembl74_cDNA/Kallisto_Complete ; \
                         COMPLETE=0 ; \
                         for RSAMPLE in \`echo ${RNACHECK} |sed 's/@/\n/g'\`

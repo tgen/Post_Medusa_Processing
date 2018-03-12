@@ -1,0 +1,177 @@
+#!/usr/bin/env bash
+#SBATCH --job-name="thFusion"
+#SBATCH --time=0-235:00:00
+#SBATCH --mail-user=${USER}@tgen.org
+#SBATCH --mail-type=FAIL
+
+module load python/2.7.13
+module load R/2.15.2
+module load ImageMagick/7.0.5
+
+BOWTIE1PATH=/home/tgenref/binaries/bowtie/bowtie-1.0.0/
+PATH=${BOWTIE1PATH}:$PATH
+export PATH
+
+BWAPATH=/home/tgenref/binaries/bwa/bwa-0.7.8/
+REF=/home/tgenref/homo_sapiens/grch37_hg19/hs37d5_tgen/tool_specific_resources/bwa/hs37d5_plusRibo_plusOncoViruses_plusERCC.fa
+FAI=/home/tgenref/homo_sapiens/grch37_hg19/hs37d5_tgen/genome_reference/hs37d5_plusRibo_plusOncoViruses_plusERCC.fa.fai
+SAMTOOLSPATH=/home/tgenref/binaries/samtools/samtools-0.1.19/
+export PATH="/home/tgenref/binaries/samtools/samtools-0.1.19/:$PATH"
+PICARDPATH=/home/tgenref/binaries/picard/1.111/
+THFUSIONPATH=/home/tgenref/binaries/tophat2/tophat-2.0.11.Linux_x86_64/
+INDEXBASE=/home/tgenref/homo_sapiens/grch37_hg19/hs37d5_tgen/tool_specific_resources/bowtie/hs37d5_plusRibo_plusOncoViruses_plusERCC
+
+# Merge fastqs. This will only work for paired reads for now.
+
+FASTQR1LIST=${FASTQR1LIST//@/ }
+FASTQR2LIST=${FASTQR2LIST//@/ }
+
+cat ${FASTQR1LIST} >> ${RNASAMPLEID}_R1.fastq.gz
+cat ${FASTQR2LIST} >> ${RNASAMPLEID}_R2.fastq.gz
+
+# Change directory into topHatFusionDir and start setting variables and links
+cd ${RNASAMPLEID}.topHatFusionDir
+TOPHATDIR=`pwd`
+
+ln -s ../${RNASAMPLEID}_R1.fastq.gz ${RNASAMPLEID}_R1.fastq.gz
+ln -s ../${RNASAMPLEID}_R2.fastq.gz ${RNASAMPLEID}_R2.fastq.gz
+
+# Get first 2 million reads for next step
+gunzip -c ${RNASAMPLEID}_R1.fastq.gz | head -n 8000000 > ${RNASAMPLEID}_R1.TEMP.fastq
+gunzip -c ${RNASAMPLEID}_R2.fastq.gz | head -n 8000000 > ${RNASAMPLEID}_R2.TEMP.fastq
+
+# Align first 2 million reads for collecting stats in the next step
+${BWAPATH}/bwa mem -t8 ${REF} ${RNASAMPLEID}_R1.TEMP.fastq ${RNASAMPLEID}_R2.TEMP.fastq | ${SAMTOOLSPATH}/samtools view -S -h -b -t ${FAI} - | ${SAMTOOLSPATH}/samtools sort - ${RNASAMPLEID}
+
+# Get insert size metrics
+/usr/lib/jvm/java-1.7.0-openjdk-1.7.0.91-2.6.2.3.el7.x86_64/jre/bin/java -jar ${PICARDPATH}/CollectInsertSizeMetrics.jar INPUT=${RNASAMPLEID}.bam OUTPUT=${RNASAMPLEID}.bwa.transcriptome.picInsertMetrics.txt HISTOGRAM_FILE=${RNASAMPLEID}.bwa.transcriptome.picInsertMetrics.pdf VALIDATION_STRINGENCY=SILENT TMP_DIR=${TOPHATDIR} LEVEL=ALL_READS
+
+# Make png of the pdf
+convert ${RNASAMPLEID}.bwa.transcriptome.picInsertMetrics.pdf ${RNASAMPLEID}.bwa.transcriptome.picInsertMetrics.pdf.png
+
+# Get combined read lenth for inner distance calculation
+read1Length=`gunzip -c ${RNASAMPLEID}_R1.fastq.gz | head -2 | tail -1 | wc -c`
+read2Length=`gunzip -c ${RNASAMPLEID}_R2.fastq.gz | head -2 | tail -1 | wc -c`
+combinedLength=`echo "$read1Length + $read2Length - 2" | bc`
+
+# Get inner distance and standard deviation from picard stats
+INNERDIST=`head -n 8 ${RNASAMPLEID}.bwa.transcriptome.picInsertMetrics.txt | tail -n 1 | cut -f5 | awk -v var1="$combinedLength" '{printf "%.0f\n", $1-var1}'`
+STDEV=`head -n 8 ${RNASAMPLEID}.bwa.transcriptome.picInsertMetrics.txt | tail -n 1 | cut -f6 | awk '{printf "%.0f\n", $1}'`
+
+# Run TopHat Fusion
+${THFUSIONPATH}/tophat2 \
+	-p 16 \
+	-N 3 \
+	--read-edit-dist 3 \
+	--fusion-search \
+	--bowtie1 \
+	--no-coverage-search \
+	-r ${INNERDIST} \
+	--mate-std-dev ${STDEV} \
+	--fusion-min-dist 100000 \
+	--max-intron-length 100000 \
+	--keep-fasta-order \
+	--fusion-anchor-length 20 \
+	--fusion-ignore-chromosomes MT \
+	-o ${TOPHATDIR} \
+	${INDEXBASE} ${RNASAMPLEID}_R1.fastq.gz ${RNASAMPLEID}_R2.fastq.gz 
+
+if [ $? -eq 0 ]
+then
+	mv accepted_hits.bam ${RNASAMPLEID}.proj.accepted_hits.bam
+	mv unmapped.bam ${RNASAMPLEID}.proj.unmapped.bam
+	mv junctions.bed ${RNASAMPLEID}.proj.junctions.bed
+	mv insertions.bed ${RNASAMPLEID}.proj.insertions.bed
+	mv deletions.bed ${RNASAMPLEID}.proj.deletions.bed
+	mv fusions.out ${RNASAMPLEID}.proj.fusions.out
+	
+	${SAMTOOLSPATH}/samtools index ${RNASAMPLEID}.proj.accepted_hits.bam 
+	${SAMTOOLSPATH}/samtools flagstat ${RNASAMPLEID}.proj.accepted_hits.bam > ${RNASAMPLEID}.proj.accepted_hits.bam.samStats
+	
+else
+	touch ${RNASAMPLEID}.TopHatFusion_Fail
+	exit 1
+fi
+
+# Start TopHatFusionPost
+
+module load bowtie/0.12.9
+PATH=/home/tgenref/binaries/blast/ncbi-blast-2.2.29+/bin:$PATH
+export PATH
+THFUSION2VCFPATH=/home/tgenref/binaries/scripts/
+
+mkdir tophat_${RNASAMPLEID}
+cd tophat_${RNASAMPLEID} 
+ln -s ../${RNASAMPLEID}.proj.accepted_hits.bam accepted_hits.bam
+ln -s ../${RNASAMPLEID}.proj.fusions.out fusions.out
+cd ..
+ln -s /home/tgenref/homo_sapiens/grch37_hg19/hs37d5_tgen/gene_model/ensembl_v74/tool_specific_resources/tophat_fusion/refGene.txt refGene.txt
+ln -s /home/tgenref/homo_sapiens/grch37_hg19/hs37d5_tgen/gene_model/ensembl_v74/tool_specific_resources/tophat_fusion/ensGene.txt ensGene.txt
+ln -s /home/tgenref/homo_sapiens/grch37_hg19/hs37d5_tgen/gene_model/ensembl_v74/tool_specific_resources/tophat_fusion/mcl mcl
+ln -s /home/tgenref/homo_sapiens/grch37_hg19/hs37d5_tgen/gene_model/ensembl_v74/tool_specific_resources/tophat_fusion/blast blast
+
+
+${THFUSIONPATH}/tophat-fusion-post -p 4 --num-fusion-reads 3 --num-fusion-pairs 2 --num-fusion-both 5 --skip-read-dist --fusion-read-mismatches 3 ${INDEXBASE} 
+
+if [ $? -eq 0 ]
+then
+	mv tophatfusion_out/fusion_seq.fa tophatfusion_out/${RNASAMPLEID}.fusion_seq.fa
+	mv tophatfusion_out/fusion_seq.bwtout tophatfusion_out/${RNASAMPLEID}.thFusion.fusion_seq.bwtout
+	mv tophatfusion_out/fusion_seq.map tophatfusion_out/${RNASAMPLEID}.thFusion.fusion_seq.map
+	mv tophatfusion_out/potential_fusion.txt tophatfusion_out/${RNASAMPLEID}.thFusion.potential_fusion.txt
+	mv tophatfusion_out/result.txt tophatfusion_out/${RNASAMPLEID}.thFusion.result.txt
+	mv tophatfusion_out/result.html tophatfusion_out/${RNASAMPLEID}.thFusion.result.html
+	cd tophatfusion_out
+	${THFUSION2VCFPATH}/tophatFusion2vcf.sh ${RNASAMPLEID}.thFusion.result.txt ${RNASAMPLEID} ${REF}
+	cd ..
+else
+	touch ${RNASAMPLEID}.TopHatFusion_Fail
+	exit 1
+fi
+
+# Start rsyncing back to isilon
+
+fails=0
+
+ssh ${USER}@10.48.73.17 "cd $TOPHATDIR ; rsync align_summary.txt ${STARTDIR}/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.topHatFusionDir/ "
+if [ $? -ne 0 ] 
+then
+	fails=1
+fi
+
+ssh ${USER}@10.48.73.17 "cd $TOPHATDIR ; rsync prep_reads.info ${STARTDIR}/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.topHatFusionDir/ "
+if [ $? -ne 0 ] 
+then
+	fails=1
+fi
+
+for FILE in .bwa.transcriptome.picInsertMetrics.pdf .bwa.transcriptome.picInsertMetrics.pdf.png .bwa.transcriptome.picInsertMetrics.txt .proj.accepted_hits.bam.samStats .proj.deletions.bed .proj.fusions.out .proj.insertions.bed .proj.junctions.bed 
+do
+	ssh ${USER}@10.48.73.17 "cd $TOPHATDIR ; rsync ${RNASAMPLEID}${FILE} ${STARTDIR}/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.topHatFusionDir/ "
+	if [ $? -ne 0 ]
+	then
+		fails=1
+	fi
+done
+
+cd tophatfusion_out
+
+for FILE in .thFusion.potential_fusion.txt .thFusion.result.html .thFusion.result.txt .thf.vcf
+do
+	ssh ${USER}@10.48.73.17 "cd ${TOPHATDIR}/tophatfusion_out ; rsync ${RNASAMPLEID}${FILE} ${STARTDIR}/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.topHatFusionDir/tophatfusion_out/ "
+	if [ $? -ne 0 ]
+	then
+		fails=1
+	fi
+done
+
+if [ $fails -ne 0 ]
+then
+	touch ../${RNASAMPLEID}.TopHatFusion_Fail
+fi
+
+
+
+
+
+

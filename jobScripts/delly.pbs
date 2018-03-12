@@ -1,32 +1,42 @@
 #!/bin/bash
-#PBS -l nodes=1:ppn=8
-#PBS -N Delly
-#PBS -l walltime=48:00:00
-#PBS -j oe
-#PBS -o ${HOME}/STD_OUT/${PBS_JOBNAME}_${GENOMEPAIR}_${PBS_JOBID}.out
+#SBATCH --job-name="Delly"
+#SBATCH --time=24:00:00 
+#SBATCH -n 1
+#SBATCH -N 1
+#SBATCH --cpus-per-task 8
+#SBATCH --mail-user=${USER}@tgen.org
 
-cd $PBS_O_WORKDIR
+cd $DIR
+
+module load python/3.6.0
+module load BEDTools/2.26.0
 
 export DIR_WORK=`pwd`
-export REF_GENOME="/home/tgenref/pecan/refgenome/hs37d5/hs37d5_plusRibo_plusOncoViruses_plusERCC.fa"
-export FILE_REGION_TO_EXCLUDE="/home/tgenref/pecan/delly2/v20161111/human.GRCh37.contigs_to_exclude.MMRF-specific.tsv"
-export FILE_WITH_FILTER_OPTIONS="/home/tgenref/pecan/delly2/v20161111/ini_files/svtop.delly.filter_options.ini"
+export REF_GENOME="/home/tgenref/homo_sapiens/grch37_hg19/hs37d5_tgen/genome_reference/hs37d5_plusRibo_plusOncoViruses_plusERCC.fa"
+export FILE_REGION_TO_EXCLUDE="/home/tgenref/binaries/delly2/v20161111/human.GRCh37.contigs_to_exclude.MMRF-specific.tsv"
+export FILE_WITH_FILTER_OPTIONS="/home/tgenref/binaries/delly2/v20161111/ini_files/svtop.delly.filter_options.ini"
 export TUMOR_BAM=${TUMORSAMPLEG}.bwa.final.bam
 export NORMAL_BAM=${NORMALSAMPLEG}.bwa.final.bam
 export PROJECT=${PATIENT_NAME}
-export DIR_SCRIPT_DELLY=/home/tgenref/pecan/delly2/v20161111
-export ANNO_FILE=/home/tgenref/pecan/delly2/v20161111/annotations/MMRF.StructuralAnnotationDatabase.GRCh37.74_20161101.bed
+export DIR_SCRIPT_DELLY=/home/tgenref/binaries/delly2/v20161111
+export ANNO_FILE=/home/tgenref/binaries/delly2/v20161111/annotations/MMRF.StructuralAnnotationDatabase.GRCh37.74_20161101.bed
 export NCPUS=2
 export SLOP=1000
 export LIST_CONTIGS_TOBE_FILTERED_OUT="hs37d5:MT"
-export DELLY_BINDIR=/home/tgenref/pecan/delly2/bin/0.7.6
+export DELLY_BINDIR=/home/tgenref/binaries/delly2/bin/0.7.6
 export VCFTOOLS_BINDIR=/home/clegendre/tools/vcftools/vcftools_v0.1.14_20160810/bin
 export VCF_CONCAT_EXE=/home/clegendre/tools/vcftools/vcftools_v0.1.14_20160810/bin/vcf-concat
-export PERL5LIB=/home/clegendre/tools/vcftools/vcftools_v0.1.14_20160810/share/perl5:/home/clegendre/tools/vcftools/vcftools_0.1.14_20160810/bin:${PERL5LIB}
-export SNPSIFT_JAR_FP=/home/clegendre/tools/snpEff/v4.2.0/SnpSift.jar
-export PYTHON_ENV_ACTIVATE=/home/tgenref/pecan/delly2/python_venvs/delly2_pysam/bin/activate
-export PYTHON_SCRIPT_DELLY_GENE_ANNO=/home/tgenref/pecan/delly2/v20161111/svtop.delly.sv_annotation.parallel.py
-export PATH=/home/achristofferson/local/bcftools:$PATH
+export PERL5LIB=/home/clegendre/tools/vcftools/vcftools_v0.1.14_20160810/share/perl5:/home/clegendre/tools/vcftools/vcftools_v0.1.14_20160810/bin:${PERL5LIB}
+
+# changed to version in personal directory as original binary has been deleted
+export SNPSIFT_JAR_FP=/home/achristofferson/local/snpEff_4.2_2015-12-05/SnpSift.jar
+
+# this might cause problems as it has been deleted going to comment out
+# export PYTHON_ENV_ACTIVATE=/home/tgenref/pecan/delly2/python_venvs/delly2_pysam/bin/activate
+
+
+export PYTHON_SCRIPT_DELLY_GENE_ANNO=/home/tgenref/binaries/delly2/v20161111/svtop.delly.sv_annotation.parallel.py
+export PATH=/home/achristofferson/local/bcftools-1.6:/packages/BEDTools/2.26.0/bin:$PATH
 export FILE_INI_ENV_VARS=${DIR_SCRIPT_DELLY}/ini_files/svtop.delly.definition_env_variables.ini
 
 FAILED=0
@@ -163,14 +173,14 @@ if [ ${FAILED} = 0 ]
 then
 	for extToCopy in SV_DEL.bcf SV_DUP.bcf SV_INS.bcf SV_INV.bcf SV_TRA.bcf 
         do
-                ssh ${USER}@172.19.1.222 "rsync ${DIR_WORK}/bcfs/${GENOMEPAIR}.${extToCopy} ${STARTDIR}/${PATIENT_NAME}/delly/${GENOMEPAIR}/bcfs/ "
+                ssh ${USER}@10.48.73.18 "rsync ${DIR_WORK}/bcfs/${GENOMEPAIR}.${extToCopy} ${STARTDIR}/${PATIENT_NAME}/delly/${GENOMEPAIR}/bcfs/ "
 
                 if [ $? -ne 0 ]
                 then
                 	fails=1
                 fi
 
-		ssh ${USER}@172.19.1.222 "rsync ${DIR_WORK}/bcfs/${GENOMEPAIR}.${extToCopy}.csi ${STARTDIR}/${PATIENT_NAME}/delly/${GENOMEPAIR}/bcfs/ "
+		ssh ${USER}@10.48.73.18 "rsync ${DIR_WORK}/bcfs/${GENOMEPAIR}.${extToCopy}.csi ${STARTDIR}/${PATIENT_NAME}/delly/${GENOMEPAIR}/bcfs/ "
                 
                 if [ $? -ne 0 ]
                 then 
@@ -178,35 +188,35 @@ then
                 fi
         done
 
-	ssh ${USER}@172.19.1.222 "rsync ${DIR_WORK}/bcfs/logs.zip ${STARTDIR}/${PATIENT_NAME}/delly/${GENOMEPAIR}/bcfs/ "
+	ssh ${USER}@10.48.73.18 "rsync ${DIR_WORK}/bcfs/logs.zip ${STARTDIR}/${PATIENT_NAME}/delly/${GENOMEPAIR}/bcfs/ "
 
         if [ $? -ne 0 ]
         then
         	fails=1
         fi
 
-	ssh ${USER}@172.19.1.222 "rsync ${DIR_WORK}/${GENOMEPAIR}.delly.allCalls.vcf ${STARTDIR}/${PATIENT_NAME}/delly/${GENOMEPAIR}/ "
+	ssh ${USER}@10.48.73.18 "rsync ${DIR_WORK}/${GENOMEPAIR}.delly.allCalls.vcf ${STARTDIR}/${PATIENT_NAME}/delly/${GENOMEPAIR}/ "
 
 	if [ $? -ne 0 ]
         then
                 fails=1
         fi
 
-	ssh ${USER}@172.19.1.222 "rsync ${DIR_WORK}/${GENOMEPAIR}.delly.passOnly.vcf ${STARTDIR}/${PATIENT_NAME}/delly/${GENOMEPAIR}/ "
+	ssh ${USER}@10.48.73.18 "rsync ${DIR_WORK}/${GENOMEPAIR}.delly.passOnly.vcf ${STARTDIR}/${PATIENT_NAME}/delly/${GENOMEPAIR}/ "
         
         if [ $? -ne 0 ]
         then
                 fails=1
         fi
 
-	ssh ${USER}@172.19.1.222 "rsync ${DIR_WORK}/${GENOMEPAIR}.delly.passOnly.flt.anno.final.vcf ${STARTDIR}/${PATIENT_NAME}/delly/${GENOMEPAIR}/ "
+	ssh ${USER}@10.48.73.18 "rsync ${DIR_WORK}/${GENOMEPAIR}.delly.passOnly.flt.anno.final.vcf ${STARTDIR}/${PATIENT_NAME}/delly/${GENOMEPAIR}/ "
 
         if [ $? -ne 0 ]
         then
                 fails=1
         fi
 else
-	ssh ${USER}@172.19.1.222 "rm ${STARTDIR}/${PATIENT_NAME}/delly/${GENOMEPAIR}/Delly_In_Progress ; \
+	ssh ${USER}@10.48.73.18 "rm ${STARTDIR}/${PATIENT_NAME}/delly/${GENOMEPAIR}/Delly_In_Progress ; \
                 rm ${STARTDIR}/${PATIENT_NAME}/Delly_In_Progress ; \
                 touch ${STARTDIR}/${PATIENT_NAME}/Delly_Fail ; \
                 echo Delly pbs script failed for ${GENOMEPAIR} >> ${STARTDIR}/${PATIENT_NAME}/delly/${GENOMEPAIR}/Delly_Fail ; \
@@ -218,7 +228,7 @@ fi
 
 if [ $fails -eq 0 ] && [ ${FAILED} = 0 ]
 then
-	ssh ${USER}@172.19.1.222 "rm ${STARTDIR}/${PATIENT_NAME}/delly/${GENOMEPAIR}/Delly_In_Progress ; \
+	ssh ${USER}@10.48.73.18 "rm ${STARTDIR}/${PATIENT_NAME}/delly/${GENOMEPAIR}/Delly_In_Progress ; \
                 touch ${STARTDIR}/${PATIENT_NAME}/delly/${GENOMEPAIR}/Delly_Complete ; \
                 COMPLETE=0 ; \
                 for XPAIR in \`echo ${EXPECTEDPAIRS} | sed 's/@/\n/g'\` 
@@ -238,7 +248,7 @@ else
 	if [ $fails -ne 0 ] && [ ${FAILED} = 0 ]
         then
 
-                ssh ${USER}@172.19.1.222 "rm ${STARTDIR}/${PATIENT_NAME}/delly/${GENOMEPAIR}/Delly_In_Progress ; \
+                ssh ${USER}@10.48.73.18 "rm ${STARTDIR}/${PATIENT_NAME}/delly/${GENOMEPAIR}/Delly_In_Progress ; \
                         echo Delly pbs script failed to rsync back to isilon for ${GENOMEPAIR} >> ${STARTDIR}/${PATIENT_NAME}/delly/${GENOMEPAIR}/Delly_Fail ; \
                         echo Delly pbs script failed to rsync back to isilon for ${GENOMEPAIR} | mailx -s "Post_Medusa_Processing_Failed" ${USER}@tgen.org "
 
