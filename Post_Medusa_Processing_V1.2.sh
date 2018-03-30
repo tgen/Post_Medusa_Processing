@@ -34,6 +34,7 @@
 ##	-c	Used with the -R and -l option to only restart Copy Number analysis. 
 ##	-m	Used with the -R and -l option to only restart vcfMerger using the pegasus pipe protocol.
 ##	-t	Used with the -R and -l option to only restart TopHat Fusion.
+##	-f	Used with the -R and -l option to only restart digar/fusion validator
 ##
 ####################################################################
 ####################################################################
@@ -57,8 +58,10 @@ POSTPROCESSING=0
 CNAONLY=0
 MERGERONLY=0
 TOPHATONLY=0
+FUSIONONLY=0
 
-while getopts ":rRb:l:pcmt" opt
+
+while getopts ":rRb:l:pcmtf" opt
 do
 	case $opt in
 		r)
@@ -98,6 +101,8 @@ do
 			MERGERONLY=1 ;;
 		t)
 			TOPHATONLY=1 ;;
+		f)
+			FUSIONONLY=1 ;;
 		l)
 			DIRLIST=$OPTARG
 			if [ ! -f $DIRLIST ]
@@ -121,7 +126,7 @@ done
 
 # Test if more than one ONLY option is used
 
-ONLYSUM=`echo $(($MERGERONLY + $CNAONLY + $TOPHATONLY))`
+ONLYSUM=`echo $(($MERGERONLY + $CNAONLY + $TOPHATONLY + $FUSIONONLY))`
 
 if [ ${ONLYSUM} -gt 1 ] 
 then
@@ -238,7 +243,7 @@ do
 
 	#{{{
 
-	if [ ${RESTART} == 1 ] && [ ${MERGERONLY} == 0 ] && [ ${TOPHATONLY} == 0 ]
+	if [ ${RESTART} == 1 ] && [ ${MERGERONLY} == 0 ] && [ ${TOPHATONLY} == 0 ] && [ ${FUSIONONLY} == 0 ]
 	then
 		# Remove cna_manual directory
 		if [ -d cna_manual_2016 ] 
@@ -322,29 +327,78 @@ do
 				rm -rf Delly_Complete
 			fi
 		fi
+
+		# Remove Digar/validation directories
+		if [ ${CNAONLY} = 0 ]
+		then
+			if [ -d fusionValidator ]
+			then
+				rm -rf fusionValidator
+			fi
+
+			if [ -f FusionValidator_In_Progress ]
+			then
+				rm FusionValidator_In_Progress
+			fi
+
+			if [ -f FusionValidator_Fail ]
+			then
+				rm FusionValidator_Fail
+			fi
+
+			if [ -f FusionValidator_Complete ]
+			then
+				rm FusionValidator_Complete
+			fi
+		fi
 	fi
 
+	# Remove vcf merger results if only redueing merger
 	if [ ${MERGERONLY} == 1 ]
 	then
 		if [ -d vcfMerger_pegasus ]
-                then
-                	rm -rf vcfMerger_pegasus
-                fi
+		then
+			rm -rf vcfMerger_pegasus
+		fi
 
-                if [ -f SnpEFF_ANN_Complete ]
-                then
-                	rm SnpEFF_ANN_Complete
-                fi
+		if [ -f SnpEFF_ANN_Complete ]
+		then
+			rm SnpEFF_ANN_Complete
+		fi
 
-                if [ -f SnpEFF_ANN_In_Progress ]
-                then
-                	rm SnpEFF_ANN_In_Progress
-                fi
+		if [ -f SnpEFF_ANN_In_Progress ]
+		then
+			rm SnpEFF_ANN_In_Progress
+		fi
 
-                if [ -f SnpEFF_ANN_Fail ]
-                then
-                	rm SnpEFF_ANN_Fail
-                fi
+		if [ -f SnpEFF_ANN_Fail ]
+		then
+          	rm SnpEFF_ANN_Fail
+		fi
+	fi
+
+	# Restart digar/FusionValidator if only
+	if [ ${FUSIONONLY} == 1 ]
+	then
+		if [ -d fusionValidator ]
+		then
+			rm -rf fusionValidator
+		fi
+
+		if [ -f FusionValidator_Complete ]
+		then
+			rm FusionValidator_Complete
+		fi
+
+		if [ -f FusionValidator_In_Progress ]
+		then
+			rm FusionValidator_In_Progress
+		fi
+
+		if [ -f FusionValidator_Fail ]
+		then
+          	rm FusionValidator_Fail
+		fi
 	fi
 
 
@@ -422,7 +476,7 @@ do
 
 	if [ ${RESTART} = 1 ] || [ ${POSTPROCESSING} = 1 ]
 	then
-		if [ ${TOPHATONLY} = 0 ]
+		if [ ${TOPHATONLY} = 0 ] && [ ${FUSIONONLY} = 0 ]
 		then
 		# Check for any DNAPAIR= lines and start appropriate snpEff and CNA jobs
 		
@@ -530,6 +584,8 @@ do
 
 				for PAIR in `echo ${EXOMEPAIRS[@]} | sed 's/\s/\n/g'`
 				do
+					# {{{
+
 					echo $PAIR
 					LIBTYPE="Exome"
 					NORMALSAMPLE="`echo ${PAIR} | cut -d- -f1`"
@@ -627,7 +683,11 @@ do
 						fi
 					fi
 
+					#}}}
+
 					# Start LI CNA if available
+
+					 #{{{
 
 					LICOUNT=0
 					LIPAIRS=()
@@ -688,10 +748,15 @@ do
 						echo "There is more than one LI for the Tumor Isolation." >> CNA_Manual_Fail
 						echo "There is more than one LI for the Tumor Isolation. ${TUMORSHORT}" | mailx -s "LI_cna_manual_failed" ${USER}@tgen.org 
 					fi
+
+					#}}} 
+
 				done
 			fi
 
 			# Start Delly
+
+			#{{{
 
 			if [ ${CNAONLY} = 0 ] && [ ${MERGERONLY} == 0 ]
 			then
@@ -749,10 +814,12 @@ do
 					done
 				fi
 			fi
+			#}}}
+
 		fi
 		fi
 	
-		# Start Salmon and Kallisto or TopHat Fusion if RNA is available
+		# Start Salmon and Kallisto, Fusion Validator TopHat Fusion if RNA is available
 		
 		#{{{
 		
@@ -760,32 +827,40 @@ do
 		then
 			RNACOUNT="`grep "SAMPLE=.*,RNA," ${PATIENT_NAME}.config | wc -l`"
 	
-			if [ ${RNACOUNT} = 0 ] && [ ${TOPHATONLY} = 0 ]
+			if [ ${RNACOUNT} = 0 ]
 			then
 				echo ${PATIENT_NAME} has no RNA.
 				touch Salmon_Complete
 				touch Kallisto_Complete
+				touch FusionValidator_Complete
 			else
-				if [ ${TOPHATONLY} = 0 ]
+				if [ ${TOPHATONLY} = 0 ] && [ ${FUSIONONLY} = 0 ]
 				then
 					touch Salmon_In_Progress
 					touch Kallisto_In_Progress
+					touch FusionValidator_In_Progress
 				fi
-	
+
+				if [ ${FUSIONONLY} = 1 ]
+				then
+					touch FusionValidator_In_Progress
+				fi
+
 				# Make list of all RNA samples for final copy back check
 
 				RNACHECK=()
+				RNACHECK2=()
 
 				for RNALIST in `grep "SAMPLE=.*,RNA," ${PATIENT_NAME}.config`
 				do
 					ASSAY="`echo ${RNALIST} | awk -F"[=,]" '{print $2}'`"
 					RNASAMPLEID="`echo ${RNALIST} | awk -F"[=,]" '{print $3}'`"
 					RNACHECK+=("${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}")
+					RNACHECK2+=("fusionValidator/${RNASAMPLEID}")
 				done
 
 				RNACHECKLIST=`echo ${RNACHECK[@]} | sed 's/\s/@/g'`
-
-				echo $RNACHECKLIST
+				RNACHECKLIST2=`echo ${RNACHECK2[@]} | sed 's/\s/@/g'`
 
 				for RNASAMPLE in `grep "SAMPLE=.*,RNA," ${PATIENT_NAME}.config`
 				do
@@ -793,8 +868,9 @@ do
 					ASSAY="`echo ${RNASAMPLE} | awk -F"[=,]" '{print $2}'`"
 					STUDY="`echo ${PATIENT_NAME} | awk -F'_' '{print $1}'`"
 					RNASAMPLEID="`echo ${RNASAMPLE} | awk -F"[=,]" '{print $3}'`"
+					RNATUMORSHORT="`echo ${RNASAMPLEID} | cut -d_ -f1,2,3,4,5`"
 					
-					if [ ${RESTART} == 1 ] && [ ${TOPHATONLY} = 0 ]
+					if [ ${RESTART} == 1 ] && [ ${TOPHATONLY} = 0 ] && [ ${FUSIONONLY} = 0 ]
 					then
 						if [ -d ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir ]
 						then
@@ -805,31 +881,92 @@ do
 						then
 							rm -rf ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir
 						fi
+						
 					elif [ ${RESTART} == 1 ] && [ ${TOPHATONLY} = 1 ]
 					then
 						if [ -d ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.topHatFusionDir ]
 						then
 							# change this once confirmed that results are good
-							#rm -rf ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.topHatFusionDir
-							mv ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.topHatFusionDir ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.topHatFusionDir_old
-						fi			
+							rm -rf ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.topHatFusionDir
+							#mv ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.topHatFusionDir ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.topHatFusionDir_old
+						fi
 					fi
 
-					if [ ${TOPHATONLY} = 0 ]
+					if [ ${TOPHATONLY} = 0 ] && [ ${FUSIONONLY} = 0 ]
 					then
 						mkdir -p ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/{ensembl74_cDNA,ensembl74_GTF,ensembl74_GTF_V7.2}
 						mkdir -p ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/{ensembl74_cDNA,ensembl74_GTF}
+						mkdir -p fusionValidator/${RNASAMPLEID}
 						touch ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/{ensembl74_cDNA,ensembl74_GTF,ensembl74_GTF_V7.2}/Salmon_In_Progress
 						touch ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/{ensembl74_cDNA,ensembl74_GTF}/Kallisto_In_Progress
+						touch fusionValidator/${RNASAMPLEID}/FusionValidator_In_Progress
+					elif [ ${FUSIONONLY} = 1 ]
+					then
+						mkdir -p fusionValidator/${RNASAMPLEID}
+						touch fusionValidator/${RNASAMPLEID}/FusionValidator_In_Progress
 					else
 						mkdir -p ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.topHatFusionDir/tophatfusion_out
 					fi
+
+					# Get matching genomes for fusion validation
+
+					MATCHEDWGSCOUNT=0
+					unset NORM
+					unset TUMR
+					unset NORMTYPE
+					unset TUMRTYPE
+					unset NORMALSAMPLEG
+					unset TUMORSAMPLEG
+					unset NASSAY
+					unset TASSAY
+
+
+					for MATCHEDWGS in `grep "DNAPAIR=" ${PATIENT_NAME}.config | grep ${RNATUMORSHORT}`
+					do
+						NORM=`echo ${MATCHEDWGS} | awk -F"[=,]" '{print $2}'`
+						TUMR=`echo ${MATCHEDWGS} | awk -F"[=,]" '{print $3}'`
+
+						NORMTYPE=`grep "SAMPLE=.*${NORM}" ${PATIENT_NAME}.config | awk -F',' '{ print $3 }'`
+						TUMRTYPE=`grep "SAMPLE=.*${TUMR}" ${PATIENT_NAME}.config | awk -F',' '{ print $3 }'`
+
+						if [ ${NORMTYPE} = "Genome" ] && [ ${TUMRTYPE} = "Genome" ]
+						then
+							((MATCHEDWGSCOUNT+=1))
+							
+							if [ ${MATCHEDWGSCOUNT} -lt 2 ]	
+							then
+								NORMALSAMPLEG=`echo ${MATCHEDWGS} | awk -F"[=,]" '{print $2}'`
+								NASSAY="`echo ${NORMALSAMPLEG} | cut -d_ -f7`"
+								TUMORSAMPLEG=`echo ${MATCHEDWGS} | awk -F"[=,]" '{print $3}'`
+								TASSAY="`echo ${TUMORSAMPLEG} | cut -d_ -f7`"
+							else
+								echo Warning!!!! ${RNASAMPLEID} pairs to more than one WGS pair.
+								echo 	This is not expected and will cause many problems downstream.
+								echo 	Exiting script...
+								exit 1
+							fi
+						fi
+
+					done
+
+					if [ -z $TUMORSAMPLEG ]
+					then
+						NORMALSAMPLEG=NotAvailable
+						TUMORSAMPLEG=NotAvailable
+					fi
+
+					if [ -z $NORMALSAMPLEG ]
+					then
+						NORMALSAMPLEG=NotAvailable
+						TUMORSAMPLEG=NotAvailable
+					fi
+
 					# Will need code to get fastq directory and library type of RNA library for salmon      
 
 					FASTQDIR="`grep "${STUDY}_STUDY=" ${CONSTANTS} | cut -d= -f2 | tr -d '\n'`"
 					RNATYPE="`grep "${ASSAY}_SALMONlibType=" ${CONSTANTS} | cut -d= -f2 | tr -d '\n'`"
 	
-					qsub -v TOPHATONLY="${TOPHATONLY}",BASEDIR="${BASEDIR}",PBSNAME=${RNASAMPLEID},STARTDIR="${STARTDIR}",RNATYPE="${RNATYPE}",USER="${USER}",ASSAY="${ASSAY}",FASTQDIR="${FASTQDIR}",RNASAMPLEID="${RNASAMPLEID}",PATIENT_NAME="${PATIENT_NAME}",LIBTYPE="${LIBTYPE}",RNACHECK=${RNACHECKLIST} ${RNAPBS}
+					qsub -v NASSAY=${NASSAY},TASSAY=${TASSAY},TUMORSAMPLEG=${TUMORSAMPLEG},NORMALSAMPLEG=${NORMALSAMPLEG},FUSIONONLY="${FUSIONONLY}",TOPHATONLY="${TOPHATONLY}",BASEDIR="${BASEDIR}",PBSNAME=${RNASAMPLEID},STARTDIR="${STARTDIR}",RNATYPE="${RNATYPE}",USER="${USER}",ASSAY="${ASSAY}",FASTQDIR="${FASTQDIR}",RNASAMPLEID="${RNASAMPLEID}",PATIENT_NAME="${PATIENT_NAME}",LIBTYPE="${LIBTYPE}",RNACHECK=${RNACHECKLIST},RNACHECK2=${RNACHECKLIST2} ${RNAPBS}
 
 					STATUS=$?
 

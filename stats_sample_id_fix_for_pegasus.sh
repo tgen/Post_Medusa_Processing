@@ -7,7 +7,7 @@ do
 	if [ ! -f rename_stats_complete.txt ]
 	then
 	
-	for row in `grep "FQ=" ${line}.config | awk -F'/' '{print $8 }' | awk -F'_' '{ OFS = "_" ; print $2,$3,$4,$5,$6,$7,$8,$9 }' | sort | uniq`
+	for row in `grep "FQ=" ${line}.config | rev | cut -d/ -f1 | rev | awk -F'_' '{ OFS = "_" ; print $1,$2,$3,$4,$5,$6,$7,$8 }' | sort | uniq`
 	do 
 		SAMPLE_NAME=`echo $row | awk -F'_' '{ OFS = "_" ; print $1,$2,$3,$4,$5,$6,$7 }'` 
 		SAMPLE_ID=`echo $row | awk -F'_' '{ OFS = "_" ; print $8 }'`

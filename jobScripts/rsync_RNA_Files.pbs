@@ -1,5 +1,5 @@
 #!/bin/bash
-#PBS -l nodes=1:ppn=4
+#PBS -l nodes=1:ppn=8
 #PBS -N Post_Medusa_Processing
 #PBS -l walltime=24:00:00
 #PBS -j oe
@@ -9,23 +9,39 @@ cd $PBS_O_WORKDIR
 
 JOBSDIR=${BASEDIR}/jobScripts
 
-# Make Directories for Salmon and Kalliso
+# Make Directories for Salmon, Kalliso, and Fusion Validator
 
-if [ ${TOPHATONLY} = 0 ]
+if [ ${TOPHATONLY} = 0 ] && [ ${FUSIONONLY} = 0 ]
 then
-	ssh ${USER}@dback-data2.tgen.org "mkdir -p /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/{${RNASAMPLEID}.salmonDir,${RNASAMPLEID}.kallistoDir}/{ensembl74_cDNA,ensembl74_GTF} ; mkdir /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/ensembl74_GTF_V7.2"
+	ssh ${USER}@dback-data2.tgen.org "mkdir -p /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID} ; mkdir -p /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/{${RNASAMPLEID}.salmonDir,${RNASAMPLEID}.kallistoDir}/{ensembl74_cDNA,ensembl74_GTF} ; mkdir /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/ensembl74_GTF_V7.2"
 
 	if [ $? -ne 0 ]
 	then
 		rm Salmon_In_Progress 
 		rm Kallisto_In_Progress
+		rm FusionValidator_In_Progress
 		rm ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/{ensembl74_cDNA,ensembl74_GTF,ensembl74_GTF_V7.2}/Salmon_In_Progress
 		rm ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/{ensembl74_cDNA,ensembl74_GTF}/Kallisto_In_Progress
-		echo Failed to make Salmon and Kallisto directories for ${RNASAMPLEID} >> Salmon_Fail
-		echo Failed to make Salmon and Kallisto directories for ${RNASAMPLEID} >> Kallisto_Fail
-		echo Failed to make Salmon and Kallisto directories for ${RNASAMPLEID} | tee -a ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/{ensembl74_cDNA,ensembl74_GTF,ensembl74_GTF_V7.2}/Salmon_Fail
-		echo Failed to make Salmon and Kallisto directories for ${RNASAMPLEID} | tee -a ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/{ensembl74_cDNA,ensembl74_GTF}/Kallisto_Fail
-		echo Failed to make Salmon and Kallisto directories for ${RNASAMPLEID} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
+		rm fusionValidator/${RNASAMPLEID}/FusionValidator_In_Progress
+		echo Failed to make fusionValidator, Salmon and Kallisto directories for ${RNASAMPLEID} >> Salmon_Fail
+		echo Failed to make fusionValidator, Salmon and Kallisto directories for ${RNASAMPLEID} >> Kallisto_Fail
+		echo Failed to make fusionValidator, Salmon and Kallisto directories for ${RNASAMPLEID} >> FusionValidator_Fail
+		echo Failed to make fusionValidator, Salmon and Kallisto directories for ${RNASAMPLEID} | tee -a ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/{ensembl74_cDNA,ensembl74_GTF,ensembl74_GTF_V7.2}/Salmon_Fail
+		echo Failed to make fusionValidator, Salmon and Kallisto directories for ${RNASAMPLEID} | tee -a ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/{ensembl74_cDNA,ensembl74_GTF}/Kallisto_Fail
+		echo Failed to make fusionValidator, Salmon and Kallisto directories for ${RNASAMPLEID} >> fusionValidator/${RNASAMPLEID}/FusionValidator_Fail
+		echo Failed to make fusionValidator, Salmon and Kallisto directories for ${RNASAMPLEID} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
+		exit 1
+	fi
+elif [ ${FUSIONONLY} = 1 ]
+then
+	ssh ${USER}@dback-data2.tgen.org "mkdir -p /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID} "
+	if [ $? -ne 0 ]
+	then
+		rm FusionValidator_In_Progress
+		rm fusionValidator/${RNASAMPLEID}/FusionValidator_In_Progress
+		echo Failed to make fusionValidator directories for ${RNASAMPLEID} >> FusionValidator_Fail
+		echo Failed to make fusionValidator directories for ${RNASAMPLEID} >> fusionValidator/${RNASAMPLEID}/FusionValidator_Fail
+		echo Failed to make fusionValidator directories for ${RNASAMPLEID} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
 		exit 1
 	fi
 else
@@ -43,87 +59,331 @@ LINKFLAG=0
 FASTQR1=()
 FASTQR2=()
 
-for FASTQ in `grep "FQ=" ${PATIENT_NAME}.config | grep ${RNASAMPLEID} | cut -d, -f2 | rev | cut -c 17- | rev `
-do
-	ssh ${USER}@dback-data2.tgen.org " if [ ! -f ${FASTQ}_R1_001.fastq.gz ] ; then exit 1 ; fi "	
+if [ ${FUSIONONLY} = 0 ]
+then
 
-	if [ $? -ne 0 ]
-	then
-		fastq=`echo ${FASTQ} | sed "s|/scratch/mrussell/chiaPipe/runFolders|${FASTQDIR}|g" | sed "s|/scratch/akurdoglu/genFastqPipe/runFolders|${FASTQDIR}|g" | sed "s|/scratch/tgenjetstream/chiaPipe/runFolders|${FASTQDIR}|g" `
-		LINKFLAG=1
-		fastqBASE=`basename $fastq `
-	else
-		fastq=$FASTQ
-		fastqBASE=`basename $fastq `
-	fi
+	for FASTQ in `grep "FQ=" ${PATIENT_NAME}.config | grep ${RNASAMPLEID} | cut -d, -f2 | rev | cut -c 17- | rev `
+	do
+		ssh ${USER}@dback-data2.tgen.org " if [ ! -f ${FASTQ}_R1_001.fastq.gz ] ; then exit 1 ; fi "	
 
-	if [ $LINKFLAG -ne 0 ]
-	then
-		ssh ${USER}@dback-data2.tgen.org " rsync ${fastq}_R1_001.fastq.gz /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/"
-		STATUS=$?
-	else
-		ssh ${USER}@dback-data2.tgen.org " ln -s ${fastq}_R1_001.fastq.gz /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${fastqBASE}_R1_001.fastq.gz "
-		STATUS=$?
-	fi
+		if [ $? -ne 0 ]
+		then
+			fastq=`echo ${FASTQ} | sed "s|/scratch/mrussell/chiaPipe/runFolders|${FASTQDIR}|g" | sed "s|/scratch/akurdoglu/genFastqPipe/runFolders|${FASTQDIR}|g" | sed "s|/scratch/tgenjetstream/chiaPipe/runFolders|${FASTQDIR}|g" `
+			LINKFLAG=1
+			fastqBASE=`basename $fastq `
+		else
+			fastq=$FASTQ
+			fastqBASE=`basename $fastq `
+		fi
 
-	if [ "$STATUS" -ne "0" ] && [ ${TOPHATONLY} = 0 ]
+		if [ $LINKFLAG -ne 0 ]
+		then
+			ssh ${USER}@dback-data2.tgen.org " rsync ${fastq}_R1_001.fastq.gz /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/"
+			STATUS=$?
+		else
+			ssh ${USER}@dback-data2.tgen.org " ln -s ${fastq}_R1_001.fastq.gz /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${fastqBASE}_R1_001.fastq.gz "
+			STATUS=$?
+		fi
+	
+		if [ "$STATUS" -ne "0" ] && [ ${TOPHATONLY} = 0 ]
+		then
+			rm Salmon_In_Progress
+			rm Kallisto_In_Progress
+			rm FusionValidator_In_Progress
+			rm ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/{ensembl74_cDNA,ensembl74_GTF,ensembl74_GTF_V7.2}/Salmon_In_Progress
+			rm ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/{ensembl74_cDNA,ensembl74_GTF}/Kallisto_In_Progress
+			rm fusionValidator/${RNASAMPLEID}/FusionValidator_In_Progress
+			echo Failed to rsync a fastq over to dback for ${RNASAMPLEID} >> Salmon_Fail
+			echo Failed to rsync a fastq over to dback for ${RNASAMPLEID} >> Kallisto_Fail 
+			echo Failed to rsync a fastq over to dback for ${RNASAMPLEID} >> FusionValidator_Fail
+			echo Failed to rsync a fastq over to dback for ${RNASAMPLEID} | tee -a ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/{ensembl74_cDNA,ensembl74_GTF,ensembl74_GTF_V7.2}/Salmon_Fail 
+			echo Failed to rsync a fastq over to dback for ${RNASAMPLEID} | tee -a ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/{ensembl74_cDNA,ensembl74_GTF}/Kallisto_Fail
+			echo Failed to rsync a fastq over to dback for ${RNASAMPLEID} >> fusionValidator/${RNASAMPLEID}/FusionValidator_Fail
+			echo Failed to rsync a fastq over to dback for ${RNASAMPLEID} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
+			exit 1
+		elif [ "$STATUS" -ne "0" ] && [ ${TOPHATONLY} = 1 ]
+		then
+			echo Failed to rsync R1 fastq over to dback for ${RNASAMPLEID} >> TopHatFusion_Fail
+			exit 1
+		else
+			FASTQR1+=("${fastqBASE}_R1_001.fastq.gz")
+		fi
+
+		if [ $LINKFLAG -ne 0 ]
+		then
+			ssh ${USER}@dback-data2.tgen.org " rsync ${fastq}_R2_001.fastq.gz /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/"
+			STATUS=$?
+		else
+			ssh ${USER}@dback-data2.tgen.org " ln -s ${fastq}_R2_001.fastq.gz /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${fastqBASE}_R2_001.fastq.gz "
+			STATUS=$?
+		fi
+
+		if [ "$STATUS" -ne "0" ] && [ ${TOPHATONLY} = 0 ]
+		then
+			rm Salmon_In_Progress
+			rm Kallisto_In_Progress
+			rm FusionValidator_In_Progress
+			rm ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/{ensembl74_cDNA,ensembl74_GTF,ensembl74_GTF_V7.2}/Salmon_In_Progress
+			rm ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/{ensembl74_cDNA,ensembl74_GTF}/Kallisto_In_Progress
+			rm fusionValidator/${RNASAMPLEID}/FusionValidator_In_Progress
+			echo Failed to rsync a fastq over to dback for ${RNASAMPLEID} >> Salmon_Fail
+			echo Failed to rsync a fastq over to dback for ${RNASAMPLEID} >> Kallisto_Fail
+			echo Failed to rsync a fastq over to dback for ${RNASAMPLEID} >> FusionValidator_Fail
+			echo Failed to rsync a fastq over to dback for ${RNASAMPLEID} | tee -a ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/{ensembl74_cDNA,ensembl74_GTF,ensembl74_GTF_V7.2}/Salmon_Fail
+			echo Failed to rsync a fastq over to dback for ${RNASAMPLEID} | tee -a ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/{ensembl74_cDNA,ensembl74_GTF}/Kallisto_Fail
+			echo Failed to rsync a fastq over to dback for ${RNASAMPLEID} >> fusionValidator/${RNASAMPLEID}/FusionValidator_Fail
+			echo Failed to rsync a fastq over to dback for ${RNASAMPLEID} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
+			exit 1
+		elif [ "$STATUS" -ne "0" ] && [ ${TOPHATONLY} = 1 ]
+		then
+			echo Failed to rsync R2 fastq over to dback for ${RNASAMPLEID} >> TopHatFusion_Fail
+			exit 1
+		else
+			FASTQR2+=("${fastqBASE}_R2_001.fastq.gz")
+		fi
+		LINKFLAG=0
+	done
+
+	FASTQR1LIST=`echo ${FASTQR1[@]} | sed 's/\s/@/g'`
+	
+	FASTQR2LIST=`echo ${FASTQR2[@]} | sed 's/\s/@/g'`
+
+fi
+
+# Rsync over additional Fusion Validator related files
+
+if [ ${TOPHATONLY} = 0 ]
+then
+	# rsync Star aligned bam
+	ssh ${USER}@dback-data2.tgen.org "if [ -d \"\` ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \`\" ] ; then LNDIR=\`ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \` ; ln -s \${LNDIR}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.starDir/${RNASAMPLEID}.starAligned.final.bam /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/${RNASAMPLEID}.starAligned.final.bam ; else rsync ${STARTDIR}/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.starDir/${RNASAMPLEID}.starAligned.final.bam /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/${RNASAMPLEID}.starAligned.final.bam ; fi"
+	STATUS=$?
+	if [ "$STATUS" -ne "0" ] && [ ${FUSIONONLY} = 0 ]
 	then
-		rm Salmon_In_Progress
+		rm Salmon_In_Progress 
 		rm Kallisto_In_Progress
+		rm FusionValidator_In_Progress
 		rm ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/{ensembl74_cDNA,ensembl74_GTF,ensembl74_GTF_V7.2}/Salmon_In_Progress
 		rm ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/{ensembl74_cDNA,ensembl74_GTF}/Kallisto_In_Progress
-		echo Failed to rsync a fastq over to dback for ${RNASAMPLEID} >> Salmon_Fail
-		echo Failed to rsync a fastq over to dback for ${RNASAMPLEID} >> Kallisto_Fail 
-		echo Failed to rsync a fastq over to dback for ${RNASAMPLEID} | tee -a ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/{ensembl74_cDNA,ensembl74_GTF,ensembl74_GTF_V7.2}/Salmon_Fail 
-		echo Failed to rsync a fastq over to dback for ${RNASAMPLEID} | tee -a ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/{ensembl74_cDNA,ensembl74_GTF}/Kallisto_Fail
-		echo Failed to rsync a fastq over to dback for ${RNASAMPLEID} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
+		rm fusionValidator/${RNASAMPLEID}/FusionValidator_In_Progress
+		echo Failed to rsync star bam for fusionValidator for ${RNASAMPLEID} >> Salmon_Fail
+		echo Failed to rsync star bam for fusionValidator for ${RNASAMPLEID} >> Kallisto_Fail
+		echo Failed to rsync star bam for fusionValidator for ${RNASAMPLEID} >> FusionValidator_Fail
+		echo Failed to rsync star bam for fusionValidator for ${RNASAMPLEID} | tee -a ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/{ensembl74_cDNA,ensembl74_GTF,ensembl74_GTF_V7.2}/Salmon_Fail
+		echo Failed to rsync star bam for fusionValidator for ${RNASAMPLEID} | tee -a ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/{ensembl74_cDNA,ensembl74_GTF}/Kallisto_Fail
+		echo Failed to rsync star bam for fusionValidator for ${RNASAMPLEID} >> fusionValidator/${RNASAMPLEID}/FusionValidator_Fail
+		echo Failed to rsync star bam for fusionValidator for ${RNASAMPLEID} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
 		exit 1
-	elif [ "$STATUS" -ne "0" ] && [ ${TOPHATONLY} = 1 ]
+	elif [ "$STATUS" -ne "0" ] && [ ${FUSIONONLY} = 1 ]
 	then
-		echo Failed to rsync R1 fastq over to dback for ${RNASAMPLEID} >> TopHatFusion_Fail
+		rm FusionValidator_In_Progress
+		rm fusionValidator/${RNASAMPLEID}/FusionValidator_In_Progress
+		echo Failed to rsync star bam for fusionValidator for ${RNASAMPLEID} >> FusionValidator_Fail
+		echo Failed to rsync star bam for fusionValidator for ${RNASAMPLEID} >> fusionValidator/${RNASAMPLEID}/FusionValidator_Fail
 		exit 1
-	else
-		FASTQR1+=("${fastqBASE}_R1_001.fastq.gz")
+
 	fi
 
-	if [ $LINKFLAG -ne 0 ]
-	then
-		ssh ${USER}@dback-data2.tgen.org " rsync ${fastq}_R2_001.fastq.gz /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/"
-		STATUS=$?
-	else
-		ssh ${USER}@dback-data2.tgen.org " ln -s ${fastq}_R2_001.fastq.gz /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${fastqBASE}_R2_001.fastq.gz "
-		STATUS=$?
-	fi
 
-	if [ "$STATUS" -ne "0" ] && [ ${TOPHATONLY} = 0 ]
+	ssh ${USER}@dback-data2.tgen.org "if [ -d \"\` ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \`\" ] ; then LNDIR=\`ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \` ; ln -s \${LNDIR}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.starDir/${RNASAMPLEID}.starAligned.final.bai /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/${RNASAMPLEID}.starAligned.final.bai ; else rsync ${STARTDIR}/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.starDir/${RNASAMPLEID}.starAligned.final.bai /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/${RNASAMPLEID}.starAligned.final.bai ; fi"
+	STATUS=$?
+
+	if [ "$STATUS" -ne "0" ] && [ ${FUSIONONLY} = 0 ]
 	then
-		rm Salmon_In_Progress
+		rm Salmon_In_Progress 
 		rm Kallisto_In_Progress
+		rm FusionValidator_In_Progress
 		rm ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/{ensembl74_cDNA,ensembl74_GTF,ensembl74_GTF_V7.2}/Salmon_In_Progress
 		rm ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/{ensembl74_cDNA,ensembl74_GTF}/Kallisto_In_Progress
-		echo Failed to rsync a fastq over to dback for ${RNASAMPLEID} >> Salmon_Fail
-		echo Failed to rsync a fastq over to dback for ${RNASAMPLEID} >> Kallisto_Fail
-		echo Failed to rsync a fastq over to dback for ${RNASAMPLEID} | tee -a ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/{ensembl74_cDNA,ensembl74_GTF,ensembl74_GTF_V7.2}/Salmon_Fail
-		echo Failed to rsync a fastq over to dback for ${RNASAMPLEID} | tee -a ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/{ensembl74_cDNA,ensembl74_GTF}/Kallisto_Fail
-		echo Failed to rsync a fastq over to dback for ${RNASAMPLEID} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
+		rm fusionValidator/${RNASAMPLEID}/FusionValidator_In_Progress
+		echo Failed to rsync star bai for fusionValidator for ${RNASAMPLEID} >> Salmon_Fail
+		echo Failed to rsync star bai for fusionValidator for ${RNASAMPLEID} >> Kallisto_Fail
+		echo Failed to rsync star bai for fusionValidator for ${RNASAMPLEID} >> FusionValidator_Fail
+		echo Failed to rsync star bai for fusionValidator for ${RNASAMPLEID} | tee -a ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/{ensembl74_cDNA,ensembl74_GTF,ensembl74_GTF_V7.2}/Salmon_Fail
+		echo Failed to rsync star bai for fusionValidator for ${RNASAMPLEID} | tee -a ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/{ensembl74_cDNA,ensembl74_GTF}/Kallisto_Fail
+		echo Failed to rsync star bai for fusionValidator for ${RNASAMPLEID} >> fusionValidator/${RNASAMPLEID}/FusionValidator_Fail
+		echo Failed to rsync star bai for fusionValidator for ${RNASAMPLEID} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
 		exit 1
-	elif [ "$STATUS" -ne "0" ] && [ ${TOPHATONLY} = 1 ]
+	elif [ "$STATUS" -ne "0" ] && [ ${FUSIONONLY} = 1 ]
 	then
-		echo Failed to rsync R2 fastq over to dback for ${RNASAMPLEID} >> TopHatFusion_Fail
+		rm FusionValidator_In_Progress
+		rm fusionValidator/${RNASAMPLEID}/FusionValidator_In_Progress
+		echo Failed to rsync star bai for fusionValidator for ${RNASAMPLEID} >> FusionValidator_Fail
+		echo Failed to rsync star bai for fusionValidator for ${RNASAMPLEID} >> fusionValidator/${RNASAMPLEID}/FusionValidator_Fail
 		exit 1
-	else
-		FASTQR2+=("${fastqBASE}_R2_001.fastq.gz")
 	fi
-done
 
-FASTQR1LIST=`echo ${FASTQR1[@]} | sed 's/\s/@/g'`
 
-FASTQR2LIST=`echo ${FASTQR2[@]} | sed 's/\s/@/g'`
+	# rsync tophat fusion potential fusions
+	ssh ${USER}@dback-data2.tgen.org "if [ -d \"\` ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \`\" ] ; then LNDIR=\`ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \` ; ln -s \${LNDIR}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.topHatFusionDir/tophatfusion_out/${RNASAMPLEID}.thFusion.potential_fusion.txt /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/${RNASAMPLEID}.thFusion.potential_fusion.txt ; else rsync ${STARTDIR}/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.topHatFusionDir/tophatfusion_out/${RNASAMPLEID}.thFusion.potential_fusion.txt /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/${RNASAMPLEID}.thFusion.potential_fusion.txt ; fi"
+	STATUS=$?
+
+	if [ "$STATUS" -ne "0" ] && [ ${FUSIONONLY} = 0 ]
+	then
+		rm Salmon_In_Progress 
+		rm Kallisto_In_Progress
+		rm FusionValidator_In_Progress
+		rm ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/{ensembl74_cDNA,ensembl74_GTF,ensembl74_GTF_V7.2}/Salmon_In_Progress
+		rm ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/{ensembl74_cDNA,ensembl74_GTF}/Kallisto_In_Progress
+		rm fusionValidator/${RNASAMPLEID}/FusionValidator_In_Progress
+		echo Failed to rsync potential fusions for fusionValidator for ${RNASAMPLEID} >> Salmon_Fail
+		echo Failed to rsync potential fusions for fusionValidator for ${RNASAMPLEID} >> Kallisto_Fail
+		echo Failed to rsync potential fusions for fusionValidator for ${RNASAMPLEID} >> FusionValidator_Fail
+		echo Failed to rsync potential fusions for fusionValidator for ${RNASAMPLEID} | tee -a ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/{ensembl74_cDNA,ensembl74_GTF,ensembl74_GTF_V7.2}/Salmon_Fail
+		echo Failed to rsync potential fusions for fusionValidator for ${RNASAMPLEID} | tee -a ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/{ensembl74_cDNA,ensembl74_GTF}/Kallisto_Fail
+		echo Failed to rsync potential fusions for fusionValidator for ${RNASAMPLEID} >> fusionValidator/${RNASAMPLEID}/FusionValidator_Fail
+		echo Failed to rsync potential fusions for fusionValidator for ${RNASAMPLEID} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
+		exit 1
+	elif [ "$STATUS" -ne "0" ] && [ ${FUSIONONLY} = 1 ]
+	then
+		rm FusionValidator_In_Progress
+		rm fusionValidator/${RNASAMPLEID}/FusionValidator_In_Progress
+		echo Failed to rsync potential fusions for fusionValidator for ${RNASAMPLEID} >> FusionValidator_Fail
+		echo Failed to rsync potential fusions for fusionValidator for ${RNASAMPLEID} >> fusionValidator/${RNASAMPLEID}/FusionValidator_Fail
+		exit 1
+	fi
+
+	# rsync tophat fusion post fusions
+	ssh ${USER}@dback-data2.tgen.org "if [ -d \"\` ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \`\" ] ; then LNDIR=\`ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \` ; ln -s \${LNDIR}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.topHatFusionDir/tophatfusion_out/${RNASAMPLEID}.thFusion.result.txt /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/${RNASAMPLEID}.thFusion.result.txt ; else rsync ${STARTDIR}/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.topHatFusionDir/tophatfusion_out/${RNASAMPLEID}.thFusion.result.txt /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/${RNASAMPLEID}.thFusion.result.txt ; fi"
+	STATUS=$?
+
+	if [ "$STATUS" -ne "0" ] && [ ${FUSIONONLY} = 0 ]
+	then
+		rm Salmon_In_Progress 
+		rm Kallisto_In_Progress
+		rm FusionValidator_In_Progress
+		rm ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/{ensembl74_cDNA,ensembl74_GTF,ensembl74_GTF_V7.2}/Salmon_In_Progress
+		rm ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/{ensembl74_cDNA,ensembl74_GTF}/Kallisto_In_Progress
+		rm fusionValidator/${RNASAMPLEID}/FusionValidator_In_Progress
+		echo Failed to rsync post fusions for fusionValidator for ${RNASAMPLEID} >> Salmon_Fail
+		echo Failed to rsync post fusions for fusionValidator for ${RNASAMPLEID} >> Kallisto_Fail
+		echo Failed to rsync post fusions for fusionValidator for ${RNASAMPLEID} >> FusionValidator_Fail
+		echo Failed to rsync post fusions for fusionValidator for ${RNASAMPLEID} | tee -a ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/{ensembl74_cDNA,ensembl74_GTF,ensembl74_GTF_V7.2}/Salmon_Fail
+		echo Failed to rsync post fusions for fusionValidator for ${RNASAMPLEID} | tee -a ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/{ensembl74_cDNA,ensembl74_GTF}/Kallisto_Fail
+		echo Failed to rsync post fusions for fusionValidator for ${RNASAMPLEID} >> fusionValidator/${RNASAMPLEID}/FusionValidator_Fail
+		echo Failed to rsync post fusions for fusionValidator for ${RNASAMPLEID} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
+		exit 1
+	elif [ "$STATUS" -ne "0" ] && [ ${FUSIONONLY} = 1 ]
+	then
+		rm FusionValidator_In_Progress
+		rm fusionValidator/${RNASAMPLEID}/FusionValidator_In_Progress
+		echo Failed to rsync post fusions for fusionValidator for ${RNASAMPLEID} >> FusionValidator_Fail
+		echo Failed to rsync post fusions for fusionValidator for ${RNASAMPLEID} >> fusionValidator/${RNASAMPLEID}/FusionValidator_Fail
+		exit 1
+	fi
+
+	# rsync tophat junctions files
+	ssh ${USER}@dback-data2.tgen.org "if [ -d \"\` ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \`\" ] ; then LNDIR=\`ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \` ; ln -s \${LNDIR}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.topHatFusionDir/${RNASAMPLEID}.proj.junctions.bed /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/${RNASAMPLEID}.proj.junctions.bed ; else rsync ${STARTDIR}/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.topHatFusionDir/${RNASAMPLEID}.proj.junctions.bed /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/${RNASAMPLEID}.proj.junctions.bed ; fi"
+	STATUS=$?
+
+	if [ "$STATUS" -ne "0" ] && [ ${FUSIONONLY} = 0 ]
+	then
+		rm Salmon_In_Progress 
+		rm Kallisto_In_Progress
+		rm FusionValidator_In_Progress
+		rm ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/{ensembl74_cDNA,ensembl74_GTF,ensembl74_GTF_V7.2}/Salmon_In_Progress
+		rm ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/{ensembl74_cDNA,ensembl74_GTF}/Kallisto_In_Progress
+		rm fusionValidator/${RNASAMPLEID}/FusionValidator_In_Progress
+		echo Failed to rsync junctions file for fusionValidator for ${RNASAMPLEID} >> Salmon_Fail
+		echo Failed to rsync junctions file for fusionValidator for ${RNASAMPLEID} >> Kallisto_Fail
+		echo Failed to rsync junctions file for fusionValidator for ${RNASAMPLEID} >> FusionValidator_Fail
+		echo Failed to rsync junctions file for fusionValidator for ${RNASAMPLEID} | tee -a ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/{ensembl74_cDNA,ensembl74_GTF,ensembl74_GTF_V7.2}/Salmon_Fail
+		echo Failed to rsync junctions file for fusionValidator for ${RNASAMPLEID} | tee -a ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/{ensembl74_cDNA,ensembl74_GTF}/Kallisto_Fail
+		echo Failed to rsync junctions file for fusionValidator for ${RNASAMPLEID} >> fusionValidator/${RNASAMPLEID}/FusionValidator_Fail
+		echo Failed to rsync junctions file for fusionValidator for ${RNASAMPLEID} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
+		exit 1
+	elif [ "$STATUS" -ne "0" ] && [ ${FUSIONONLY} = 1 ]
+	then
+		rm FusionValidator_In_Progress
+		rm fusionValidator/${RNASAMPLEID}/FusionValidator_In_Progress
+		echo Failed to rsync junctions file for fusionValidator for ${RNASAMPLEID} >> FusionValidator_Fail
+		echo Failed to rsync junctions file for fusionValidator for ${RNASAMPLEID} >> fusionValidator/${RNASAMPLEID}/FusionValidator_Fail
+		exit 1
+	fi
+
+
+	
+	# rsync Salmon 7.2 unfiltered files
+	SALMONWAIT=1
+
+	if [ -f Salmon_Complete ]
+	then
+
+		ssh ${USER}@dback-data2.tgen.org " rsync ${STARTDIR}/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/ensembl74_GTF_V7.2/${RNASAMPLEID}_salmon_e74GTF_genes.sf /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/${RNASAMPLEID}_salmon_e74GTF_genes.sf"
+		STATUS=$?
+
+		if [ "$STATUS" -ne "0" ]
+		then
+			rm FusionValidator_In_Progress
+			rm fusionValidator/${RNASAMPLEID}/FusionValidator_In_Progress
+			echo Failed to rsync salmon tpm file for fusionValidator for ${RNASAMPLEID} >> FusionValidator_Fail
+			echo Failed to rsync salmon tpm file for fusionValidator for ${RNASAMPLEID} >> fusionValidator/${RNASAMPLEID}/FusionValidator_Fail
+			exit 1
+		fi
+		
+		SALMONWAIT=0
+	fi
+
+	BAMWAIT=1
+	if [ ${FUSIONONLY} = 1 ] && [ ${TUMORSAMPLEG} != "NotAvailable" ]
+	then
+		# rsync Tumor WGS BAM
+		ssh ${USER}@dback-data2.tgen.org " if [ -d \"\` ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \`\" ] ; then LNDIR=\`ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \` ; ln -s \${LNDIR}/${TASSAY}/${TUMORSAMPLEG}/${TUMORSAMPLEG}.bwa.final.bam /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/${TUMORSAMPLEG}.bwa.final.bam ; else rsync ${STARTDIR}/${PATIENT_NAME}/${TASSAY}/${TUMORSAMPLEG}/${TUMORSAMPLEG}.bwa.final.bam /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/  ; fi "
+		STATUS=$?
+
+		if [ "$STATUS" -ne "0" ]
+		then
+			rm FusionValidator_In_Progress
+			rm fusionValidator/${RNASAMPLEID}/FusionValidator_In_Progress
+			echo Failed to rsync tumor bam for fusionValidator for ${RNASAMPLEID} >> FusionValidator_Fail
+			echo Failed to rsync tumor bam for fusionValidator for ${RNASAMPLEID} >> fusionValidator/${RNASAMPLEID}/FusionValidator_Fail
+			exit 1
+		fi
+		
+		ssh ${USER}@dback-data2.tgen.org " if [ -d \"\` ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \`\" ] ; then LNDIR=\`ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \` ; ln -s \${LNDIR}/${TASSAY}/${TUMORSAMPLEG}/${TUMORSAMPLEG}.bwa.final.bai /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/${TUMORSAMPLEG}.bwa.final.bai ; else rsync ${STARTDIR}/${PATIENT_NAME}/${TASSAY}/${TUMORSAMPLEG}/${TUMORSAMPLEG}.bwa.final.bai /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/  ; fi "
+		STATUS=$?
+
+		if [ "$STATUS" -ne "0" ]
+		then
+			rm FusionValidator_In_Progress
+			rm fusionValidator/${RNASAMPLEID}/FusionValidator_In_Progress
+			echo Failed to rsync tumor bai for fusionValidator for ${RNASAMPLEID} >> FusionValidator_Fail
+			echo Failed to rsync tumor bai for fusionValidator for ${RNASAMPLEID} >> fusionValidator/${RNASAMPLEID}/FusionValidator_Fail
+			exit 1
+		fi
+
+
+		# rsync Normal WGS BAM
+		ssh ${USER}@dback-data2.tgen.org " if [ -d \"\` ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \`\" ] ; then LNDIR=\`ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \` ; ln -s \${LNDIR}/${NASSAY}/${NORMALSAMPLEG}/${NORMALSAMPLEG}.bwa.final.bam /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/${NORMALSAMPLEG}.bwa.final.bam ; else rsync ${STARTDIR}/${PATIENT_NAME}/${NASSAY}/${NORMALSAMPLEG}/${NORMALSAMPLEG}.bwa.final.bam /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/  ; fi "
+		STATUS=$?
+
+		if [ "$STATUS" -ne "0" ]
+		then
+			rm FusionValidator_In_Progress
+			rm fusionValidator/${RNASAMPLEID}/FusionValidator_In_Progress
+			echo Failed to rsync normal bam for fusionValidator for ${RNASAMPLEID} >> FusionValidator_Fail
+			echo Failed to rsync normal bam for fusionValidator for ${RNASAMPLEID} >> fusionValidator/${RNASAMPLEID}/FusionValidator_Fail
+			exit 1
+		fi
+		
+		ssh ${USER}@dback-data2.tgen.org " if [ -d \"\` ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \`\" ] ; then LNDIR=\`ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \` ; ln -s \${LNDIR}/${NASSAY}/${NORMALSAMPLEG}/${NORMALSAMPLEG}.bwa.final.bai /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/${NORMALSAMPLEG}.bwa.final.bai ; else rsync ${STARTDIR}/${PATIENT_NAME}/${NASSAY}/${NORMALSAMPLEG}/${NORMALSAMPLEG}.bwa.final.bai /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/  ; fi "
+		STATUS=$?
+
+		if [ "$STATUS" -ne "0" ]
+		then
+			rm FusionValidator_In_Progress
+			rm fusionValidator/${RNASAMPLEID}/FusionValidator_In_Progress
+			echo Failed to rsync normal bai for fusionValidator for ${RNASAMPLEID} >> FusionValidator_Fail
+			echo Failed to rsync normal bai for fusionValidator for ${RNASAMPLEID} >> fusionValidator/${RNASAMPLEID}/FusionValidator_Fail
+			exit 1
+		fi
+		BAMWAIT=0
+	fi
+fi
 
 
 ### Start pbs jobs on dback
 
-# Salmon cDNA
+# Tophat fusion and post (This only get runs by itself)
 
 DIR=/scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}
 
@@ -140,71 +400,103 @@ then
 	exit 0
 fi
 
-ssh ${USER}@dback-login1.tgen.org "source /etc/profile ; cd ${DIR} ; sbatch -n 1 -N 1 --cpus-per-task 16 --output ${HOME}/STD_OUT/%x_${RNASAMPLEID}_%j.out --export DIR=${DIR},BASEDIR=${BASEDIR},JOBSDIR=${JOBSDIR},SAMPLE=${RNASAMPLEID},STARTDIR="${STARTDIR}",RNATYPE="${RNATYPE}",ASSAY="${ASSAY}",RNASAMPLEID="${RNASAMPLEID}",LIBTYPE="${LIBTYPE}",PATIENT_NAME="${PATIENT_NAME}",RNACHECK="${RNACHECK}" ${JOBSDIR}/salmon_cDNA.pbs " 
-
-if [ $? -ne 0 ]
+if [ ${FUSIONONLY} = 0 ]
 then
-	rm Salmon_In_Progress 
-	rm ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/ensembl74_cDNA/Salmon_In_Progress
-	echo Failed to start the salmon pbs job for ${RNASAMPLEID} >> Salmon_Fail
-	echo Failed to start the salmon pbs job for ${RNASAMPLEID} >> ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/ensembl74_cDNA/Salmon_Fail
-	echo Failed to start the salmon pbs job for ${RNASAMPLEID} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
+
+	# Salmon cDNA
+	ssh ${USER}@dback-login1.tgen.org "source /etc/profile ; cd ${DIR} ; sbatch -n 1 -N 1 --cpus-per-task 16 --output ${HOME}/STD_OUT/%x_${RNASAMPLEID}_%j.out --export DIR=${DIR},BASEDIR=${BASEDIR},JOBSDIR=${JOBSDIR},SAMPLE=${RNASAMPLEID},STARTDIR="${STARTDIR}",RNATYPE="${RNATYPE}",ASSAY="${ASSAY}",RNASAMPLEID="${RNASAMPLEID}",LIBTYPE="${LIBTYPE}",PATIENT_NAME="${PATIENT_NAME}",RNACHECK="${RNACHECK}" ${JOBSDIR}/salmon_cDNA.pbs " 
+
+	if [ $? -ne 0 ]
+	then
+		rm Salmon_In_Progress 
+		rm ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/ensembl74_cDNA/Salmon_In_Progress
+		echo Failed to start the salmon pbs job for ${RNASAMPLEID} >> Salmon_Fail
+		echo Failed to start the salmon pbs job for ${RNASAMPLEID} >> ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/ensembl74_cDNA/Salmon_Fail
+		echo Failed to start the salmon pbs job for ${RNASAMPLEID} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
+	fi
+
+	# Salmon GTF
+
+	ssh ${USER}@dback-login1.tgen.org "source /etc/profile ; cd ${DIR} ; sbatch -n 1 -N 1 --cpus-per-task 16 --output ${HOME}/STD_OUT/%x_${RNASAMPLEID}_%j.out --export DIR=${DIR},BASEDIR=${BASEDIR},JOBSDIR=${JOBSDIR},SAMPLE=${RNASAMPLEID},STARTDIR="${STARTDIR}",RNATYPE="${RNATYPE}",ASSAY="${ASSAY}",RNASAMPLEID="${RNASAMPLEID}",LIBTYPE="${LIBTYPE}",PATIENT_NAME="${PATIENT_NAME}",RNACHECK="${RNACHECK}" ${JOBSDIR}/salmon_GTF.pbs "
+
+	if [ $? -ne 0 ]
+	then
+		rm Salmon_In_Progress
+		rm ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/ensembl74_GTF/Salmon_In_Progress
+		echo Failed to start the salmon pbs job for ${RNASAMPLEID} >> Salmon_Fail
+		echo Failed to start the salmon pbs job for ${RNASAMPLEID} >> ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/ensembl74_GTF/Salmon_Fail
+		echo Failed to start the salmon pbs job for ${RNASAMPLEID} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
+	fi
+
+	# Salmon GTF V7.2
+
+	SALMONJOBID=$( ssh ${USER}@dback-login1.tgen.org "source /etc/profile ; cd ${DIR} ; sbatch -n 1 -N 1 --cpus-per-task 16 --parsable --output ${HOME}/STD_OUT/%x_${RNASAMPLEID}_%j.out --export DIR=${DIR},BASEDIR=${BASEDIR},JOBSDIR=${JOBSDIR},SAMPLE=${RNASAMPLEID},STARTDIR="${STARTDIR}",RNATYPE="${RNATYPE}",ASSAY="${ASSAY}",RNASAMPLEID="${RNASAMPLEID}",LIBTYPE="${LIBTYPE}",PATIENT_NAME="${PATIENT_NAME}",RNACHECK="${RNACHECK}" ${JOBSDIR}/salmon_GTF_v7.2.pbs " )
+
+	if [ $? -ne 0 ]
+	then
+		rm Salmon_In_Progress
+		rm ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/ensembl74_GTF_V7.2/Salmon_In_Progress
+		echo Failed to start the salmon pbs job for ${RNASAMPLEID} >> Salmon_Fail
+		echo Failed to start the salmon pbs job for ${RNASAMPLEID} >> ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/ensembl74_GTF_V7.2/Salmon_Fail
+		echo Failed to start the salmon pbs job for ${RNASAMPLEID} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
+	fi
 fi
 
-# Salmon GTF
+# Fusion Validator with Digar
 
-ssh ${USER}@dback-login1.tgen.org "source /etc/profile ; cd ${DIR} ; sbatch -n 1 -N 1 --cpus-per-task 16 --output ${HOME}/STD_OUT/%x_${RNASAMPLEID}_%j.out --export DIR=${DIR},BASEDIR=${BASEDIR},JOBSDIR=${JOBSDIR},SAMPLE=${RNASAMPLEID},STARTDIR="${STARTDIR}",RNATYPE="${RNATYPE}",ASSAY="${ASSAY}",RNASAMPLEID="${RNASAMPLEID}",LIBTYPE="${LIBTYPE}",PATIENT_NAME="${PATIENT_NAME}",RNACHECK="${RNACHECK}" ${JOBSDIR}/salmon_GTF.pbs "
+DIR2=/scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}
 
-if [ $? -ne 0 ]
+if [ ${FUSIONONLY} = 1 ]
 then
-	rm Salmon_In_Progress
-	rm ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/ensembl74_GTF/Salmon_In_Progress
-	echo Failed to start the salmon pbs job for ${RNASAMPLEID} >> Salmon_Fail
-	echo Failed to start the salmon pbs job for ${RNASAMPLEID} >> ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/ensembl74_GTF/Salmon_Fail
-	echo Failed to start the salmon pbs job for ${RNASAMPLEID} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
-fi
+	ssh ${USER}@dback-login1.tgen.org "source /etc/profile ; cd ${DIR2} ; sbatch -n 1 -N 1 --cpus-per-task 16 --output ${HOME}/STD_OUT/%x_${RNASAMPLEID}_%j.out --export FUSIONONLY=${FUSIONONLY},DIR2=${DIR2},DIR=${DIR},TUMORSAMPLEG=${TUMORSAMPLEG},NORMALSAMPLEG=${NORMALSAMPLEG},BASEDIR=${BASEDIR},JOBSDIR=${JOBSDIR},SAMPLE=${RNASAMPLEID},STARTDIR="${STARTDIR}",RNATYPE="${RNATYPE}",ASSAY="${ASSAY}",RNASAMPLEID="${RNASAMPLEID}",LIBTYPE="${LIBTYPE}",PATIENT_NAME="${PATIENT_NAME}",RNACHECK2="${RNACHECK2}" ${JOBSDIR}/fusionValidator.pbs "
+	if [ $? -ne 0 ]
+	then
+			rm FusionValidator_In_Progress
+			rm fusionValidator/${RNASAMPLEID}/FusionValidator_In_Progress
+			echo Failed to start sbach job for fusionValidator for ${RNASAMPLEID} >> FusionValidator_Fail
+			echo Failed to rsync normal bai for fusionValidator for ${RNASAMPLEID} >> fusionValidator/${RNASAMPLEID}/FusionValidator_Fail
+	fi
+else
+	ssh ${USER}@dback-login1.tgen.org "source /etc/profile ; cd ${DIR2} ; sbatch -n 1 -N 1 --cpus-per-task 16 --dependency=${SALMONJOBID} --output ${HOME}/STD_OUT/%x_${RNASAMPLEID}_%j.out --export FUSIONONLY=${FUSIONONLY},DIR2=${DIR2},DIR=${DIR},BASEDIR=${BASEDIR},JOBSDIR=${JOBSDIR},SAMPLE=${RNASAMPLEID},STARTDIR="${STARTDIR}",RNATYPE="${RNATYPE}",ASSAY="${ASSAY}",RNASAMPLEID="${RNASAMPLEID}",LIBTYPE="${LIBTYPE}",PATIENT_NAME="${PATIENT_NAME}",RNACHECK2="${RNACHECK2}" ${JOBSDIR}/fusionValidator.pbs "
+	if [ $? -ne 0 ]
+	then
+			rm FusionValidator_In_Progress
+			rm fusionValidator/${RNASAMPLEID}/FusionValidator_In_Progress
+			echo Failed to start sbach job for fusionValidator for ${RNASAMPLEID} >> FusionValidator_Fail
+			echo Failed to rsync normal bai for fusionValidator for ${RNASAMPLEID} >> fusionValidator/${RNASAMPLEID}/FusionValidator_Fail
+	fi
 
-# Salmon GTF V7.2
-
-ssh ${USER}@dback-login1.tgen.org "source /etc/profile ; cd ${DIR} ; sbatch -n 1 -N 1 --cpus-per-task 16 --output ${HOME}/STD_OUT/%x_${RNASAMPLEID}_%j.out --export DIR=${DIR},BASEDIR=${BASEDIR},JOBSDIR=${JOBSDIR},SAMPLE=${RNASAMPLEID},STARTDIR="${STARTDIR}",RNATYPE="${RNATYPE}",ASSAY="${ASSAY}",RNASAMPLEID="${RNASAMPLEID}",LIBTYPE="${LIBTYPE}",PATIENT_NAME="${PATIENT_NAME}",RNACHECK="${RNACHECK}" ${JOBSDIR}/salmon_GTF_v7.2.pbs "
-
-if [ $? -ne 0 ]
-then
-        rm Salmon_In_Progress
-        rm ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/ensembl74_GTF_V7.2/Salmon_In_Progress
-        echo Failed to start the salmon pbs job for ${RNASAMPLEID} >> Salmon_Fail
-        echo Failed to start the salmon pbs job for ${RNASAMPLEID} >> ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/ensembl74_GTF_V7.2/Salmon_Fail
-        echo Failed to start the salmon pbs job for ${RNASAMPLEID} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
-fi
-
-
-# Kallisto cDNA
-
-ssh ${USER}@dback-login1.tgen.org "source /etc/profile ; cd ${DIR} ; sbatch -n 1 -N 1 --cpus-per-task 16 --output ${HOME}/STD_OUT/%x_${RNASAMPLEID}_%j.out --export DIR=${DIR},BASEDIR=${BASEDIR},JOBSDIR=${JOBSDIR},SAMPLE=${RNASAMPLEID},STARTDIR="${STARTDIR}",RNATYPE="${RNATYPE}",ASSAY="${ASSAY}",RNASAMPLEID="${RNASAMPLEID}",LIBTYPE="${LIBTYPE}",PATIENT_NAME="${PATIENT_NAME}",RNACHECK="${RNACHECK}" ${JOBSDIR}/kallisto_cDNA.pbs "
-
-if [ $? -ne 0 ]
-then
-	rm Kallisto_In_Progress
-	rm ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/ensembl74_cDNA/Kallisto_In_Progress
-	echo Failed to start the kallisto pbs job for ${RNASAMPLEID} >> Kallisto_Fail
-	echo Failed to start the kallisto pbs job for ${RNASAMPLEID} >> ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/ensembl74_cDNA/Kallisto_Fail
-	echo Failed to start the kallisto pbs job for ${RNASAMPLEID} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
-fi
-
-# Kallisto GTF
-
-ssh ${USER}@dback-login1.tgen.org "source /etc/profile ; cd ${DIR} ; sbatch -n 1 -N 1 --cpus-per-task 16 --output ${HOME}/STD_OUT/%x_${RNASAMPLEID}_%j.out --export DIR=${DIR},BASEDIR=${BASEDIR},JOBSDIR=${JOBSDIR},SAMPLE=${RNASAMPLEID},STARTDIR="${STARTDIR}",RNATYPE="${RNATYPE}",ASSAY="${ASSAY}",RNASAMPLEID="${RNASAMPLEID}",LIBTYPE="${LIBTYPE}",PATIENT_NAME="${PATIENT_NAME}",RNACHECK="${RNACHECK}" ${JOBSDIR}/kallisto_GTF.pbs "
-
-if [ $? -ne 0 ]
-then
-	rm Kallisto_In_Progress
-	rm ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/ensembl74_GTF/Kallisto_In_Progress
-	echo Failed to start the kallisto pbs job for ${RNASAMPLEID} >> Kallisto_Fail
-	echo Failed to start the kallisto pbs job for ${RNASAMPLEID} >> ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/ensembl74_GTF/Kallisto_Fail
-	echo Failed to start the kallisto pbs job for ${RNASAMPLEID} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
 fi
 
 
+if [ ${FUSIONONLY} = 0 ]
+then
+	# Kallisto cDNA
+
+	ssh ${USER}@dback-login1.tgen.org "source /etc/profile ; cd ${DIR} ; sbatch -n 1 -N 1 --cpus-per-task 16 --output ${HOME}/STD_OUT/%x_${RNASAMPLEID}_%j.out --export DIR=${DIR},BASEDIR=${BASEDIR},JOBSDIR=${JOBSDIR},SAMPLE=${RNASAMPLEID},STARTDIR="${STARTDIR}",RNATYPE="${RNATYPE}",ASSAY="${ASSAY}",RNASAMPLEID="${RNASAMPLEID}",LIBTYPE="${LIBTYPE}",PATIENT_NAME="${PATIENT_NAME}",RNACHECK="${RNACHECK}" ${JOBSDIR}/kallisto_cDNA.pbs "
+
+	if [ $? -ne 0 ]
+	then
+		rm Kallisto_In_Progress
+		rm ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/ensembl74_cDNA/Kallisto_In_Progress
+		echo Failed to start the kallisto pbs job for ${RNASAMPLEID} >> Kallisto_Fail
+		echo Failed to start the kallisto pbs job for ${RNASAMPLEID} >> ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/ensembl74_cDNA/Kallisto_Fail
+		echo Failed to start the kallisto pbs job for ${RNASAMPLEID} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
+	fi
+
+	# Kallisto GTF
+
+	ssh ${USER}@dback-login1.tgen.org "source /etc/profile ; cd ${DIR} ; sbatch -n 1 -N 1 --cpus-per-task 16 --output ${HOME}/STD_OUT/%x_${RNASAMPLEID}_%j.out --export DIR=${DIR},BASEDIR=${BASEDIR},JOBSDIR=${JOBSDIR},SAMPLE=${RNASAMPLEID},STARTDIR="${STARTDIR}",RNATYPE="${RNATYPE}",ASSAY="${ASSAY}",RNASAMPLEID="${RNASAMPLEID}",LIBTYPE="${LIBTYPE}",PATIENT_NAME="${PATIENT_NAME}",RNACHECK="${RNACHECK}" ${JOBSDIR}/kallisto_GTF.pbs "
+
+	if [ $? -ne 0 ]
+	then
+		rm Kallisto_In_Progress
+		rm ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/ensembl74_GTF/Kallisto_In_Progress
+		echo Failed to start the kallisto pbs job for ${RNASAMPLEID} >> Kallisto_Fail
+		echo Failed to start the kallisto pbs job for ${RNASAMPLEID} >> ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/ensembl74_GTF/Kallisto_Fail
+		echo Failed to start the kallisto pbs job for ${RNASAMPLEID} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org
+	fi
+fi
 
 
 

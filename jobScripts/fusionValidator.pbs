@@ -1,0 +1,191 @@
+#!/bin/bash
+#SBATCH --job-name="FusionValidator"
+#SBATCH --time=24:00:00 
+#SBATCH -n 1
+#SBATCH -N 1
+#SBATCH --cpus-per-task 16
+#SBATCH --mail-user=${USER}@tgen.org
+
+
+module load samtools/1.3.1
+#module load bowtie/0.12.9
+module load bowtie2/2.3.0
+module load parallel/20171222
+cd ${DIR2}
+
+FAILED=0
+
+if [ ${FUSIONONLY} = 0 ]
+then
+	if [ ${TUMORSAMPLEG} != "NotAvailable" ]
+	then
+		# Wait for the last file to get rsynced over as part of the delly step in "rsync_Genome_Files.pbs"
+		while [ ! -f /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/delly/${NORMALSAMPLEG}-${TUMORSAMPLEG}/${NORMALSAMPLEG}.bwa.final.bai ]
+		do
+			sleep 30
+		done
+	
+		# Make links to the bams and bai
+		ln -s /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/delly/${NORMALSAMPLEG}-${TUMORSAMPLEG}/${TUMORSAMPLEG}.bwa.final.bam ${TUMORSAMPLEG}.bwa.final.bam
+		if [[ ! -f ${TUMORSAMPLEG}.bwa.final.bam ]]
+		then
+			FAILED=1
+		fi
+	
+		ln -s /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/delly/${NORMALSAMPLEG}-${TUMORSAMPLEG}/${TUMORSAMPLEG}.bwa.final.bai ${TUMORSAMPLEG}.bwa.final.bai
+		if [[ ! -f ${TUMORSAMPLEG}.bwa.final.bai ]]
+		then
+			FAILED=1
+		fi
+
+		ln -s /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/delly/${NORMALSAMPLEG}-${TUMORSAMPLEG}/${NORMALSAMPLEG}.bwa.final.bam ${NORMALSAMPLEG}.bwa.final.bam
+		if [[ ! -f ${NORMALSAMPLEG}.bwa.final.bam ]]
+		then
+			FAILED=1
+		fi
+
+		ln -s /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/delly/${NORMALSAMPLEG}-${TUMORSAMPLEG}/${NORMALSAMPLEG}.bwa.final.bai ${NORMALSAMPLEG}.bwa.final.bai
+		if [[ ! -f ${NORMALSAMPLEG}.bwa.final.bai ]]
+		then
+			FAILED=1
+		fi
+	fi
+
+	# link Salmon files
+	ln -s ${DIR}/${RNASAMPLEID}.salmonDir/ensembl74_GTF_V7.2/${RNASAMPLEID}_salmon_e74GTF_genes.sf ${RNASAMPLEID}_salmon_e74GTF_genes.sf
+	if [[ ! -f ${NORMALSAMPLEG}.bwa.final.bai ]]
+	then
+		FAILED=1
+	fi
+fi
+
+# Set Digar related variables 
+DIGAR=/home/achristofferson/Digar
+CONFIG=${DIGAR}/digar.cfg
+
+# Process files
+${DIGAR}/mmrf_post_process/processPotentialFusions_v2.0.pl ${RNASAMPLEID}.starAligned.final.bam ${DIR2} ${RNASAMPLEID}.thFusion.result.txt ${RNASAMPLEID}.thFusion.potential_fusion.txt ${RNASAMPLEID}
+if [[ $? -ne 0 ]]
+then
+	FAILED=1
+	echo processPotentialFusions_v2.0.pl
+fi
+
+# Sara's code sucks and causes a lot of race conditions that cause failures
+mkdir reads bwaSams SVRefs fastqs assm tmp
+
+# Run Digar
+${DIGAR}/mmrf_post_process/launch_DigarAssembly_in_parallel.pl -b ${RNASAMPLEID}.starAligned.final.bam -d ${DIR2} -f ${RNASAMPLEID}.thFusion.result.txt -i potentialFusionsInput.txt -s ${RNASAMPLEID} -t ${RNASAMPLEID}_salmon_e74GTF_genes.sf -j ${RNASAMPLEID}.proj.junctions.bed -c $CONFIG 
+if [[ $? -ne 0 ]]
+then
+	FAILED=1
+	echo launch_DigarAssembly.pl
+fi
+
+# Files to delete
+
+
+
+
+# Set Validator related variables
+# mkdir a working directory
+
+mkdir ${RNASAMPLEID}.fusionValidator
+
+export SPECIMEN_ID=${RNASAMPLEID} #directory name and file names prefix
+export FUSION_RESULT_FILE=${RNASAMPLEID}.Digar.final.txt # digar result file .Digar.final.txt
+
+if [ ${TUMORSAMPLEG} != "NotAvailable" ]
+then
+	export MATCHING_GENOME_WGL=/scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/${TUMORSAMPLEG}.bwa.final.bam
+	export GENOME_BAM=/scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/${TUMORSAMPLEG}.bwa.final.bam
+	export GENOME_CONSTITUTIONAL_BAM=/scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/${NORMALSAMPLEG}.bwa.final.bam
+else
+	export MATCHING_GENOME_WGL="NotAvailable"
+	export GENOME_BAM="NotAvailable"
+	export GENOME_CONSTITUTIONAL_BAM="NotAvailable"
+fi
+
+export DIST_WIN=1500 # just make 1500 for LI
+export PILE_WIN=100 # make 100 for LI
+export GVALPATH=/home/achristofferson/genomicFusionValidator/ # script directory
+export REFGENE_TABLE=/home/tgenref/homo_sapiens/grch37_hg19/hs37d5_tgen/gene_model/ensembl_v74/tool_specific_resources/tophat_fusion/refGene_Fusion_Validator.txt
+export ENSGENE_TABLE=/home/tgenref/homo_sapiens/grch37_hg19/hs37d5_tgen/gene_model/ensembl_v74/tool_specific_resources/tophat_fusion/ensGene_Fusion_Validator.txt
+export IMMUNOGLOBULIN_TABLE=/home/tgenref/homo_sapiens/grch37_hg19/hs37d5_tgen/gene_model/ensembl_v74/Homo_sapiens.GRCh37.74.gtf.hs37d5.immunoglobulinGenes.txt
+
+cp ${FUSION_RESULT_FILE} ${RNASAMPLEID}.fusionValidator/
+cd ${RNASAMPLEID}.fusionValidator/
+sed -i '/GL000/d' ${FUSION_RESULT_FILE}
+
+
+${GVALPATH}/Fusion_Validation_Pipeline.sh
+if [[ $? -ne 0 ]]
+then
+	FAILED=1
+	echo Fusion_Validation_Pipeline.sh
+fi
+
+mv ${RNASAMPLEID}.fusionValidator.GermlineOnly.txt ../
+mv ${RNASAMPLEID}.fusionValidator.Digar.collapsed.all.final.txt ../
+
+cd ..
+DIR_WORK=`pwd`
+fails=0
+
+if [ $FAILED = 0 ]
+then
+	for extToCopy in fusionValidator.Digar.collapsed.all.final.txt fusionValidator.GermlineOnly.txt Digar.allTrinity.fasta Digar.allTrinity.bam Digar.allTrinity.bai Digar.final.txt 
+	do
+		ssh ${USER}@10.48.73.18 "rsync ${DIR_WORK}/${RNASAMPLEID}.${extToCopy} ${STARTDIR}/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/ "
+		if [ $? -ne 0 ]
+		then
+			fails=1
+		fi 
+	done
+
+	if [ $fails -eq 0 ]
+	then
+		ssh ${USER}@10.48.73.18 "rm ${STARTDIR}/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/FusionValidator_In_Progress ; \
+			touch ${STARTDIR}/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/FusionValidator_Complete ; \
+			cd ${STARTDIR}/${PATIENT_NAME}/bams
+			ln -s ../fusionValidator/${RNASAMPLEID}/${RNASAMPLEID}.Digar.allTrinity.bam ${RNASAMPLEID}.Digar.allTrinity.bam
+			ln -s ../fusionValidator/${RNASAMPLEID}/${RNASAMPLEID}.Digar.allTrinity.bai ${RNASAMPLEID}.Digar.allTrinity.bai
+			COMPLETE=0 ; \
+			for RSAMPLE in \`echo ${RNACHECK2} |sed 's/@/\n/g'\`
+			do
+				if [ ! -f ${STARTDIR}/${PATIENT_NAME}/\${RSAMPLE}/FusionValidator_Complete ]
+				then
+					COMPLETE=1
+				fi
+			done ; \
+			if [ \${COMPLETE} = 0 ]
+			then
+					rm ${STARTDIR}/${PATIENT_NAME}/FusionValidator_In_Progress
+					touch ${STARTDIR}/${PATIENT_NAME}/FusionValidator_Complete
+			fi"
+
+		rm -rf /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}
+
+	else
+		ssh ${USER}@10.48.73.18 "rm ${STARTDIR}/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/FusionValidator_In_Progress ; \
+			rm ${STARTDIR}/${PATIENT_NAME}/FusionValidator_In_Progress ; \
+			touch ${STARTDIR}/${PATIENT_NAME}/FusionValidator_Fail ; \
+			echo fusionValidator pbs script failed for ${RNASAMPLEID} >> ${STARTDIR}/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/FusionValidator_Fail ; \
+			echo fusionValidator pbs script failed for ${RNASAMPLEID} | mailx -s "Post_Medusa_Processing_Failed" ${USER}@tgen.org "
+			exit 1
+
+	fi
+
+else
+	ssh ${USER}@10.48.73.18 "rm ${STARTDIR}/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/FusionValidator_In_Progress ; \
+		rm ${STARTDIR}/${PATIENT_NAME}/FusionValidator_In_Progress ; \
+		touch ${STARTDIR}/${PATIENT_NAME}/FusionValidator_Fail ; \
+		echo fusionValidator pbs script failed for ${RNASAMPLEID} >> ${STARTDIR}/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/FusionValidator_Fail ; \
+		echo fusionValidator pbs script failed for ${RNASAMPLEID} | mailx -s "Post_Medusa_Processing_Failed" ${USER}@tgen.org "
+		exit 1
+fi
+
+
+
+
+
