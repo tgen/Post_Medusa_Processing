@@ -133,13 +133,13 @@ fi
 
 fails=0
 
-ssh ${USER}@10.48.73.17 "cd $TOPHATDIR ; rsync align_summary.txt ${STARTDIR}/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.topHatFusionDir/ "
+ssh ${USER}@${DATAMOVERIP} "cd $TOPHATDIR ; rsync align_summary.txt ${STARTDIR}/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.topHatFusionDir/ "
 if [ $? -ne 0 ] 
 then
 	fails=1
 fi
 
-ssh ${USER}@10.48.73.17 "cd $TOPHATDIR ; rsync prep_reads.info ${STARTDIR}/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.topHatFusionDir/ "
+ssh ${USER}@${DATAMOVERIP} "cd $TOPHATDIR ; rsync prep_reads.info ${STARTDIR}/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.topHatFusionDir/ "
 if [ $? -ne 0 ] 
 then
 	fails=1
@@ -147,7 +147,7 @@ fi
 
 for FILE in .bwa.transcriptome.picInsertMetrics.pdf .bwa.transcriptome.picInsertMetrics.pdf.png .bwa.transcriptome.picInsertMetrics.txt .proj.accepted_hits.bam.samStats .proj.deletions.bed .proj.fusions.out .proj.insertions.bed .proj.junctions.bed 
 do
-	ssh ${USER}@10.48.73.17 "cd $TOPHATDIR ; rsync ${RNASAMPLEID}${FILE} ${STARTDIR}/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.topHatFusionDir/ "
+	ssh ${USER}@${DATAMOVERIP} "cd $TOPHATDIR ; rsync ${RNASAMPLEID}${FILE} ${STARTDIR}/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.topHatFusionDir/ "
 	if [ $? -ne 0 ]
 	then
 		fails=1
@@ -158,7 +158,7 @@ cd tophatfusion_out
 
 for FILE in .thFusion.potential_fusion.txt .thFusion.result.html .thFusion.result.txt .thf.vcf
 do
-	ssh ${USER}@10.48.73.17 "cd ${TOPHATDIR}/tophatfusion_out ; rsync ${RNASAMPLEID}${FILE} ${STARTDIR}/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.topHatFusionDir/tophatfusion_out/ "
+	ssh ${USER}@${DATAMOVERIP} "cd ${TOPHATDIR}/tophatfusion_out ; rsync ${RNASAMPLEID}${FILE} ${STARTDIR}/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.topHatFusionDir/tophatfusion_out/ "
 	if [ $? -ne 0 ]
 	then
 		fails=1

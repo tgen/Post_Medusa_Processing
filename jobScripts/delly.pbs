@@ -173,14 +173,14 @@ if [ ${FAILED} = 0 ]
 then
 	for extToCopy in SV_DEL.bcf SV_DUP.bcf SV_INS.bcf SV_INV.bcf SV_TRA.bcf 
         do
-                ssh ${USER}@10.48.73.18 "rsync ${DIR_WORK}/bcfs/${GENOMEPAIR}.${extToCopy} ${STARTDIR}/${PATIENT_NAME}/delly/${GENOMEPAIR}/bcfs/ "
+                ssh ${USER}@${DATAMOVERIP} "rsync ${DIR_WORK}/bcfs/${GENOMEPAIR}.${extToCopy} ${STARTDIR}/${PATIENT_NAME}/delly/${GENOMEPAIR}/bcfs/ "
 
                 if [ $? -ne 0 ]
                 then
                 	fails=1
                 fi
 
-		ssh ${USER}@10.48.73.18 "rsync ${DIR_WORK}/bcfs/${GENOMEPAIR}.${extToCopy}.csi ${STARTDIR}/${PATIENT_NAME}/delly/${GENOMEPAIR}/bcfs/ "
+		ssh ${USER}@${DATAMOVERIP} "rsync ${DIR_WORK}/bcfs/${GENOMEPAIR}.${extToCopy}.csi ${STARTDIR}/${PATIENT_NAME}/delly/${GENOMEPAIR}/bcfs/ "
                 
                 if [ $? -ne 0 ]
                 then 
@@ -188,35 +188,35 @@ then
                 fi
         done
 
-	ssh ${USER}@10.48.73.18 "rsync ${DIR_WORK}/bcfs/logs.zip ${STARTDIR}/${PATIENT_NAME}/delly/${GENOMEPAIR}/bcfs/ "
+	ssh ${USER}@${DATAMOVERIP} "rsync ${DIR_WORK}/bcfs/logs.zip ${STARTDIR}/${PATIENT_NAME}/delly/${GENOMEPAIR}/bcfs/ "
 
         if [ $? -ne 0 ]
         then
         	fails=1
         fi
 
-	ssh ${USER}@10.48.73.18 "rsync ${DIR_WORK}/${GENOMEPAIR}.delly.allCalls.vcf ${STARTDIR}/${PATIENT_NAME}/delly/${GENOMEPAIR}/ "
+	ssh ${USER}@${DATAMOVERIP} "rsync ${DIR_WORK}/${GENOMEPAIR}.delly.allCalls.vcf ${STARTDIR}/${PATIENT_NAME}/delly/${GENOMEPAIR}/ "
 
 	if [ $? -ne 0 ]
         then
                 fails=1
         fi
 
-	ssh ${USER}@10.48.73.18 "rsync ${DIR_WORK}/${GENOMEPAIR}.delly.passOnly.vcf ${STARTDIR}/${PATIENT_NAME}/delly/${GENOMEPAIR}/ "
+	ssh ${USER}@${DATAMOVERIP} "rsync ${DIR_WORK}/${GENOMEPAIR}.delly.passOnly.vcf ${STARTDIR}/${PATIENT_NAME}/delly/${GENOMEPAIR}/ "
         
         if [ $? -ne 0 ]
         then
                 fails=1
         fi
 
-	ssh ${USER}@10.48.73.18 "rsync ${DIR_WORK}/${GENOMEPAIR}.delly.passOnly.flt.anno.final.vcf ${STARTDIR}/${PATIENT_NAME}/delly/${GENOMEPAIR}/ "
+	ssh ${USER}@${DATAMOVERIP} "rsync ${DIR_WORK}/${GENOMEPAIR}.delly.passOnly.flt.anno.final.vcf ${STARTDIR}/${PATIENT_NAME}/delly/${GENOMEPAIR}/ "
 
         if [ $? -ne 0 ]
         then
                 fails=1
         fi
 else
-	ssh ${USER}@10.48.73.18 "rm ${STARTDIR}/${PATIENT_NAME}/delly/${GENOMEPAIR}/Delly_In_Progress ; \
+	ssh ${USER}@${DATAMOVERIP} "rm ${STARTDIR}/${PATIENT_NAME}/delly/${GENOMEPAIR}/Delly_In_Progress ; \
                 rm ${STARTDIR}/${PATIENT_NAME}/Delly_In_Progress ; \
                 touch ${STARTDIR}/${PATIENT_NAME}/Delly_Fail ; \
                 echo Delly pbs script failed for ${GENOMEPAIR} >> ${STARTDIR}/${PATIENT_NAME}/delly/${GENOMEPAIR}/Delly_Fail ; \
@@ -228,7 +228,7 @@ fi
 
 if [ $fails -eq 0 ] && [ ${FAILED} = 0 ]
 then
-	ssh ${USER}@10.48.73.18 "rm ${STARTDIR}/${PATIENT_NAME}/delly/${GENOMEPAIR}/Delly_In_Progress ; \
+	ssh ${USER}@${DATAMOVERIP} "rm ${STARTDIR}/${PATIENT_NAME}/delly/${GENOMEPAIR}/Delly_In_Progress ; \
                 touch ${STARTDIR}/${PATIENT_NAME}/delly/${GENOMEPAIR}/Delly_Complete ; \
                 COMPLETE=0 ; \
                 for XPAIR in \`echo ${EXPECTEDPAIRS} | sed 's/@/\n/g'\` 
@@ -248,7 +248,7 @@ else
 	if [ $fails -ne 0 ] && [ ${FAILED} = 0 ]
         then
 
-                ssh ${USER}@10.48.73.18 "rm ${STARTDIR}/${PATIENT_NAME}/delly/${GENOMEPAIR}/Delly_In_Progress ; \
+                ssh ${USER}@${DATAMOVERIP} "rm ${STARTDIR}/${PATIENT_NAME}/delly/${GENOMEPAIR}/Delly_In_Progress ; \
                         echo Delly pbs script failed to rsync back to isilon for ${GENOMEPAIR} >> ${STARTDIR}/${PATIENT_NAME}/delly/${GENOMEPAIR}/Delly_Fail ; \
                         echo Delly pbs script failed to rsync back to isilon for ${GENOMEPAIR} | mailx -s "Post_Medusa_Processing_Failed" ${USER}@tgen.org "
 

@@ -35,7 +35,7 @@ ${KALLISTO_BINARY} quant \
 
 if [ "$?" -ne "0" ]
 then
-        ssh ${USER}@10.48.73.17 "cd ${STARTDIR}/${PATIENT_NAME} ; \
+        ssh ${USER}@${DATAMOVERIP} "cd ${STARTDIR}/${PATIENT_NAME} ; \
                 rm ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/ensembl74_GTF/Kallisto_In_Progress ; \
                 echo Kallisto failed for ${RNASAMPLEID} >> ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/ensembl74_GTF/Kallisto_Fail ; \
                 echo Kallisto failed for ${RNASAMPLEID} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org"
@@ -47,16 +47,16 @@ else
 
 	DIR=`pwd`
 	
-	ssh ${USER}@10.48.73.17 "rsync -r ${DIR} ${STARTDIR}/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/ "
+	ssh ${USER}@${DATAMOVERIP} "rsync -r ${DIR} ${STARTDIR}/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/ "
 
         if [ $? -ne 0 ]
         then
-                ssh ${USER}@10.48.73.17 "rm ${STARTDIR}/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/ensembl74_GTF/Kallisto_In_Progress ; \
+                ssh ${USER}@${DATAMOVERIP} "rm ${STARTDIR}/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/ensembl74_GTF/Kallisto_In_Progress ; \
                         echo Failed to rsync kallisto dir to isilon for ${RNASAMPLEID} >> ${STARTDIR}/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/ensembl74_GTF/Kallisto_Fail ; \
                         echo Failed to rsync kallisto dir to isilon for ${RNASAMPLEID} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org"
 
         else
-                ssh ${USER}@10.48.73.17 "rm ${STARTDIR}/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/ensembl74_GTF/Kallisto_In_Progress ; \
+                ssh ${USER}@${DATAMOVERIP} "rm ${STARTDIR}/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/ensembl74_GTF/Kallisto_In_Progress ; \
                         touch ${STARTDIR}/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.kallistoDir/ensembl74_GTF/Kallisto_Complete ; \
                         COMPLETE=0 ; \
                         for RSAMPLE in \`echo ${RNACHECK} |sed 's/@/\n/g'\`

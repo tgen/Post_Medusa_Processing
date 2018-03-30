@@ -71,7 +71,7 @@ ${SALMON_BINARY} quant \
 
 if [ "$?" -ne 0 ]
 then
-        ssh ${USER}@10.48.73.17 "cd ${STARTDIR}/${PATIENT_NAME} ; \
+        ssh ${USER}@${DATAMOVERIP} "cd ${STARTDIR}/${PATIENT_NAME} ; \
                 rm ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/ensembl74_GTF_V7.2/Salmon_In_Progress ; \
                 echo Salmon failed for ${RNASAMPLEID} >> ${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/ensembl74_GTF_V7.2/Salmon_Fail ; \
                 echo Salmon failed for ${RNASAMPLEID} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org"
@@ -106,16 +106,16 @@ else
 
 	DIR=`pwd`
 
-	ssh ${USER}@10.48.73.17 "rsync -r ${DIR} ${STARTDIR}/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/ "
+	ssh ${USER}@${DATAMOVERIP} "rsync -r ${DIR} ${STARTDIR}/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/ "
 
         if [ $? -ne 0 ]
         then
-                ssh ${USER}@10.48.73.17 "rm ${STARTDIR}/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/ensembl74_GTF_V7.2/Salmon_In_Progress ; \
+                ssh ${USER}@${DATAMOVERIP} "rm ${STARTDIR}/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/ensembl74_GTF_V7.2/Salmon_In_Progress ; \
                         echo Failed to rsync salmon dir to isilon for ${RNASAMPLEID} >> ${STARTDIR}/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/ensembl74_GTF_V7.2/Salmon_Fail ; \
                         echo Failed to rsync salmon dir to isilon for ${RNASAMPLEID} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org"
 
         else
-                ssh ${USER}@10.48.73.17 "rm ${STARTDIR}/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/ensembl74_GTF_V7.2/Salmon_In_Progress ; \
+                ssh ${USER}@${DATAMOVERIP} "rm ${STARTDIR}/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/ensembl74_GTF_V7.2/Salmon_In_Progress ; \
                         touch ${STARTDIR}/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/ensembl74_GTF_V7.2/Salmon_Complete ; \
                         COMPLETE=0 ; \
                         for RSAMPLE in \`echo ${RNACHECK} |sed 's/@/\n/g'\`

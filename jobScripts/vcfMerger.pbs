@@ -777,14 +777,14 @@ fails=0
 
 if [ ${FAILED} = 0 ]
 then
-	ssh ${USER}@10.48.73.18 "rsync -r ${DIR}/Venns ${STARTDIR}/${PATIENT_NAME}/vcfMerger_pegasus/${EXOMEPAIR}/"
+	ssh ${USER}@${DATAMOVERIP} "rsync -r ${DIR}/Venns ${STARTDIR}/${PATIENT_NAME}/vcfMerger_pegasus/${EXOMEPAIR}/"
 
 	if [ $? -ne 0 ]
         then
                 fails=1
         fi
 	
-	ssh ${USER}@10.48.73.18 "rsync ${DIR}/${EXOMEPAIR}.merge.vcf ${STARTDIR}/${PATIENT_NAME}/vcfMerger_pegasus/${EXOMEPAIR}/"
+	ssh ${USER}@${DATAMOVERIP} "rsync ${DIR}/${EXOMEPAIR}.merge.vcf ${STARTDIR}/${PATIENT_NAME}/vcfMerger_pegasus/${EXOMEPAIR}/"
 
 	if [ $? -ne 0 ]
         then
@@ -795,7 +795,7 @@ then
 	do
 		for fileToSave in `find ${DIR} -maxdepth 1 -name "*$extToCopy"`
 		do
-			ssh ${USER}@10.48.73.18 "rsync $fileToSave ${STARTDIR}/${PATIENT_NAME}/vcfMerger_pegasus/${EXOMEPAIR}/"
+			ssh ${USER}@${DATAMOVERIP} "rsync $fileToSave ${STARTDIR}/${PATIENT_NAME}/vcfMerger_pegasus/${EXOMEPAIR}/"
 			
 			if [ $? -ne 0 ]
                         then
@@ -804,15 +804,15 @@ then
 		done
 	done
 
-	ssh ${USER}@10.48.73.18 "rsync ${DIR}/${EXOMEPAIR}.merged.canonicalOnly.rna.final.vcf ${STARTDIR}/${PATIENT_NAME}/vcfMerger_pegasus/${EXOMEPAIR}/"
+	ssh ${USER}@${DATAMOVERIP} "rsync ${DIR}/${EXOMEPAIR}.merged.canonicalOnly.rna.final.vcf ${STARTDIR}/${PATIENT_NAME}/vcfMerger_pegasus/${EXOMEPAIR}/"
 	
 	if [ $? = 0 ] && [ $fails -eq 0 ] 
 	then
-		ssh ${USER}@10.48.73.18 "rsync ${DIR}/${EXOMEPAIR}.merged.allTranscripts.rna.final.vcf ${STARTDIR}/${PATIENT_NAME}/vcfMerger_pegasus/${EXOMEPAIR}/"
+		ssh ${USER}@${DATAMOVERIP} "rsync ${DIR}/${EXOMEPAIR}.merged.allTranscripts.rna.final.vcf ${STARTDIR}/${PATIENT_NAME}/vcfMerger_pegasus/${EXOMEPAIR}/"
 
 		if [ $? = 0 ] && [ $fails -eq 0 ]
 		then
-			ssh ${USER}@10.48.73.18 "rm ${STARTDIR}/${PATIENT_NAME}/vcfMerger_pegasus/${EXOMEPAIR}/SnpEFF_ANN_In_Progress ; \
+			ssh ${USER}@${DATAMOVERIP} "rm ${STARTDIR}/${PATIENT_NAME}/vcfMerger_pegasus/${EXOMEPAIR}/SnpEFF_ANN_In_Progress ; \
 				touch ${STARTDIR}/${PATIENT_NAME}/vcfMerger_pegasus/${EXOMEPAIR}/SnpEFF_ANN_Complete ; \
 				COMPLETE=0 ; \
 				for XPAIR in \`echo ${EXOMEPAIRS} | sed 's/@/\n/g'\`
@@ -828,18 +828,18 @@ then
 					touch ${STARTDIR}/${PATIENT_NAME}/SnpEFF_ANN_Complete
 				fi"
 		else
-			ssh ${USER}@10.48.73.18 "rm ${STARTDIR}/${PATIENT_NAME}/vcfMerger_pegasus/${EXOMEPAIR}/SnpEFF_ANN_In_Progress ; \
+			ssh ${USER}@${DATAMOVERIP} "rm ${STARTDIR}/${PATIENT_NAME}/vcfMerger_pegasus/${EXOMEPAIR}/SnpEFF_ANN_In_Progress ; \
 				echo Failed to rsync the allTranscripts merged vcf back to isilon for ${EXOMEPAIR} >> ${STARTDIR}/${PATIENT_NAME}/vcfMerger_pegasus/${EXOMEPAIR}/SnpEFF_ANN_Fail ; \
 				echo Failed to rsync the allTranscripts merged vcf back to isilon for ${EXOMEPAIR} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org "	
 		fi
 	else
-		ssh ${USER}@10.48.73.18 "rm ${STARTDIR}/${PATIENT_NAME}/vcfMerger_pegasus/${EXOMEPAIR}/SnpEFF_ANN_In_Progress ; \
+		ssh ${USER}@${DATAMOVERIP} "rm ${STARTDIR}/${PATIENT_NAME}/vcfMerger_pegasus/${EXOMEPAIR}/SnpEFF_ANN_In_Progress ; \
                 	echo Failed to rsync the canonical merged vcf back to isilon for ${EXOMEPAIR} >> ${STARTDIR}/${PATIENT_NAME}/vcfMerger_pegasus/${EXOMEPAIR}/SnpEFF_ANN_Fail ; \
                         echo Failed to rsync the canonical merged vcf back to isilon for ${EXOMEPAIR} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org "
 	
 	fi
 else
-	ssh ${USER}@10.48.73.18 "rm ${STARTDIR}/${PATIENT_NAME}/vcfMerger_pegasus/${EXOMEPAIR}/SnpEFF_ANN_In_Progress ; \
+	ssh ${USER}@${DATAMOVERIP} "rm ${STARTDIR}/${PATIENT_NAME}/vcfMerger_pegasus/${EXOMEPAIR}/SnpEFF_ANN_In_Progress ; \
         	echo SnpEFF failed somewere in the process for ${EXOMEPAIR} >> ${STARTDIR}/${PATIENT_NAME}/vcfMerger_pegasus/${EXOMEPAIR}/SnpEFF_ANN_Fail ; \
                 echo SnpEFF failed somewere in the process for ${EXOMEPAIR} | mailx -s "Post Medusa Processing Failed" ${USER}@tgen.org "
 

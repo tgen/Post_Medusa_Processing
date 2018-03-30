@@ -13,7 +13,7 @@ JOBSDIR=${BASEDIR}/jobScripts
 
 if [ ${TOPHATONLY} = 0 ] && [ ${FUSIONONLY} = 0 ]
 then
-	ssh ${USER}@dback-data2.tgen.org "mkdir -p /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID} ; mkdir -p /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/{${RNASAMPLEID}.salmonDir,${RNASAMPLEID}.kallistoDir}/{ensembl74_cDNA,ensembl74_GTF} ; mkdir /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/ensembl74_GTF_V7.2"
+	ssh ${USER}@${DATAMOVER} "mkdir -p /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID} ; mkdir -p /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/{${RNASAMPLEID}.salmonDir,${RNASAMPLEID}.kallistoDir}/{ensembl74_cDNA,ensembl74_GTF} ; mkdir /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/ensembl74_GTF_V7.2"
 
 	if [ $? -ne 0 ]
 	then
@@ -34,7 +34,7 @@ then
 	fi
 elif [ ${FUSIONONLY} = 1 ]
 then
-	ssh ${USER}@dback-data2.tgen.org "mkdir -p /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID} "
+	ssh ${USER}@${DATAMOVER} "mkdir -p /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID} "
 	if [ $? -ne 0 ]
 	then
 		rm FusionValidator_In_Progress
@@ -45,7 +45,7 @@ then
 		exit 1
 	fi
 else
-	ssh ${USER}@dback-data2.tgen.org "mkdir -p /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.topHatFusionDir "
+	ssh ${USER}@${DATAMOVER} "mkdir -p /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.topHatFusionDir "
 	if [ $? -ne 0 ]
 	then
 		echo Failed to make TopHat Fusion directories for ${RNASAMPLEID} >> TopHatFusion_Fail
@@ -64,7 +64,7 @@ then
 
 	for FASTQ in `grep "FQ=" ${PATIENT_NAME}.config | grep ${RNASAMPLEID} | cut -d, -f2 | rev | cut -c 17- | rev `
 	do
-		ssh ${USER}@dback-data2.tgen.org " if [ ! -f ${FASTQ}_R1_001.fastq.gz ] ; then exit 1 ; fi "	
+		ssh ${USER}@${DATAMOVER} " if [ ! -f ${FASTQ}_R1_001.fastq.gz ] ; then exit 1 ; fi "	
 
 		if [ $? -ne 0 ]
 		then
@@ -78,10 +78,10 @@ then
 
 		if [ $LINKFLAG -ne 0 ]
 		then
-			ssh ${USER}@dback-data2.tgen.org " rsync ${fastq}_R1_001.fastq.gz /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/"
+			ssh ${USER}@${DATAMOVER} " rsync ${fastq}_R1_001.fastq.gz /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/"
 			STATUS=$?
 		else
-			ssh ${USER}@dback-data2.tgen.org " ln -s ${fastq}_R1_001.fastq.gz /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${fastqBASE}_R1_001.fastq.gz "
+			ssh ${USER}@${DATAMOVER} " ln -s ${fastq}_R1_001.fastq.gz /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${fastqBASE}_R1_001.fastq.gz "
 			STATUS=$?
 		fi
 	
@@ -111,10 +111,10 @@ then
 
 		if [ $LINKFLAG -ne 0 ]
 		then
-			ssh ${USER}@dback-data2.tgen.org " rsync ${fastq}_R2_001.fastq.gz /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/"
+			ssh ${USER}@${DATAMOVER} " rsync ${fastq}_R2_001.fastq.gz /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/"
 			STATUS=$?
 		else
-			ssh ${USER}@dback-data2.tgen.org " ln -s ${fastq}_R2_001.fastq.gz /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${fastqBASE}_R2_001.fastq.gz "
+			ssh ${USER}@${DATAMOVER} " ln -s ${fastq}_R2_001.fastq.gz /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${fastqBASE}_R2_001.fastq.gz "
 			STATUS=$?
 		fi
 
@@ -155,7 +155,7 @@ fi
 if [ ${TOPHATONLY} = 0 ]
 then
 	# rsync Star aligned bam
-	ssh ${USER}@dback-data2.tgen.org "if [ -d \"\` ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \`\" ] ; then LNDIR=\`ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \` ; ln -s \${LNDIR}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.starDir/${RNASAMPLEID}.starAligned.final.bam /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/${RNASAMPLEID}.starAligned.final.bam ; else rsync ${STARTDIR}/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.starDir/${RNASAMPLEID}.starAligned.final.bam /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/${RNASAMPLEID}.starAligned.final.bam ; fi"
+	ssh ${USER}@${DATAMOVER} "if [ -d \"\` ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \`\" ] ; then LNDIR=\`ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \` ; ln -s \${LNDIR}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.starDir/${RNASAMPLEID}.starAligned.final.bam /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/${RNASAMPLEID}.starAligned.final.bam ; else rsync ${STARTDIR}/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.starDir/${RNASAMPLEID}.starAligned.final.bam /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/${RNASAMPLEID}.starAligned.final.bam ; fi"
 	STATUS=$?
 	if [ "$STATUS" -ne "0" ] && [ ${FUSIONONLY} = 0 ]
 	then
@@ -184,7 +184,7 @@ then
 	fi
 
 
-	ssh ${USER}@dback-data2.tgen.org "if [ -d \"\` ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \`\" ] ; then LNDIR=\`ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \` ; ln -s \${LNDIR}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.starDir/${RNASAMPLEID}.starAligned.final.bai /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/${RNASAMPLEID}.starAligned.final.bai ; else rsync ${STARTDIR}/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.starDir/${RNASAMPLEID}.starAligned.final.bai /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/${RNASAMPLEID}.starAligned.final.bai ; fi"
+	ssh ${USER}@${DATAMOVER} "if [ -d \"\` ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \`\" ] ; then LNDIR=\`ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \` ; ln -s \${LNDIR}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.starDir/${RNASAMPLEID}.starAligned.final.bai /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/${RNASAMPLEID}.starAligned.final.bai ; else rsync ${STARTDIR}/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.starDir/${RNASAMPLEID}.starAligned.final.bai /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/${RNASAMPLEID}.starAligned.final.bai ; fi"
 	STATUS=$?
 
 	if [ "$STATUS" -ne "0" ] && [ ${FUSIONONLY} = 0 ]
@@ -214,7 +214,7 @@ then
 
 
 	# rsync tophat fusion potential fusions
-	ssh ${USER}@dback-data2.tgen.org "if [ -d \"\` ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \`\" ] ; then LNDIR=\`ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \` ; ln -s \${LNDIR}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.topHatFusionDir/tophatfusion_out/${RNASAMPLEID}.thFusion.potential_fusion.txt /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/${RNASAMPLEID}.thFusion.potential_fusion.txt ; else rsync ${STARTDIR}/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.topHatFusionDir/tophatfusion_out/${RNASAMPLEID}.thFusion.potential_fusion.txt /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/${RNASAMPLEID}.thFusion.potential_fusion.txt ; fi"
+	ssh ${USER}@${DATAMOVER} "if [ -d \"\` ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \`\" ] ; then LNDIR=\`ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \` ; ln -s \${LNDIR}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.topHatFusionDir/tophatfusion_out/${RNASAMPLEID}.thFusion.potential_fusion.txt /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/${RNASAMPLEID}.thFusion.potential_fusion.txt ; else rsync ${STARTDIR}/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.topHatFusionDir/tophatfusion_out/${RNASAMPLEID}.thFusion.potential_fusion.txt /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/${RNASAMPLEID}.thFusion.potential_fusion.txt ; fi"
 	STATUS=$?
 
 	if [ "$STATUS" -ne "0" ] && [ ${FUSIONONLY} = 0 ]
@@ -243,7 +243,7 @@ then
 	fi
 
 	# rsync tophat fusion post fusions
-	ssh ${USER}@dback-data2.tgen.org "if [ -d \"\` ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \`\" ] ; then LNDIR=\`ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \` ; ln -s \${LNDIR}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.topHatFusionDir/tophatfusion_out/${RNASAMPLEID}.thFusion.result.txt /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/${RNASAMPLEID}.thFusion.result.txt ; else rsync ${STARTDIR}/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.topHatFusionDir/tophatfusion_out/${RNASAMPLEID}.thFusion.result.txt /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/${RNASAMPLEID}.thFusion.result.txt ; fi"
+	ssh ${USER}@${DATAMOVER} "if [ -d \"\` ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \`\" ] ; then LNDIR=\`ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \` ; ln -s \${LNDIR}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.topHatFusionDir/tophatfusion_out/${RNASAMPLEID}.thFusion.result.txt /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/${RNASAMPLEID}.thFusion.result.txt ; else rsync ${STARTDIR}/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.topHatFusionDir/tophatfusion_out/${RNASAMPLEID}.thFusion.result.txt /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/${RNASAMPLEID}.thFusion.result.txt ; fi"
 	STATUS=$?
 
 	if [ "$STATUS" -ne "0" ] && [ ${FUSIONONLY} = 0 ]
@@ -272,7 +272,7 @@ then
 	fi
 
 	# rsync tophat junctions files
-	ssh ${USER}@dback-data2.tgen.org "if [ -d \"\` ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \`\" ] ; then LNDIR=\`ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \` ; ln -s \${LNDIR}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.topHatFusionDir/${RNASAMPLEID}.proj.junctions.bed /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/${RNASAMPLEID}.proj.junctions.bed ; else rsync ${STARTDIR}/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.topHatFusionDir/${RNASAMPLEID}.proj.junctions.bed /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/${RNASAMPLEID}.proj.junctions.bed ; fi"
+	ssh ${USER}@${DATAMOVER} "if [ -d \"\` ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \`\" ] ; then LNDIR=\`ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \` ; ln -s \${LNDIR}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.topHatFusionDir/${RNASAMPLEID}.proj.junctions.bed /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/${RNASAMPLEID}.proj.junctions.bed ; else rsync ${STARTDIR}/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.topHatFusionDir/${RNASAMPLEID}.proj.junctions.bed /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/${RNASAMPLEID}.proj.junctions.bed ; fi"
 	STATUS=$?
 
 	if [ "$STATUS" -ne "0" ] && [ ${FUSIONONLY} = 0 ]
@@ -308,7 +308,7 @@ then
 	if [ -f Salmon_Complete ]
 	then
 
-		ssh ${USER}@dback-data2.tgen.org " rsync ${STARTDIR}/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/ensembl74_GTF_V7.2/${RNASAMPLEID}_salmon_e74GTF_genes.sf /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/${RNASAMPLEID}_salmon_e74GTF_genes.sf"
+		ssh ${USER}@${DATAMOVER} " rsync ${STARTDIR}/${PATIENT_NAME}/${ASSAY}/${RNASAMPLEID}/${RNASAMPLEID}.salmonDir/ensembl74_GTF_V7.2/${RNASAMPLEID}_salmon_e74GTF_genes.sf /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/${RNASAMPLEID}_salmon_e74GTF_genes.sf"
 		STATUS=$?
 
 		if [ "$STATUS" -ne "0" ]
@@ -327,7 +327,7 @@ then
 	if [ ${FUSIONONLY} = 1 ] && [ ${TUMORSAMPLEG} != "NotAvailable" ]
 	then
 		# rsync Tumor WGS BAM
-		ssh ${USER}@dback-data2.tgen.org " if [ -d \"\` ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \`\" ] ; then LNDIR=\`ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \` ; ln -s \${LNDIR}/${TASSAY}/${TUMORSAMPLEG}/${TUMORSAMPLEG}.bwa.final.bam /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/${TUMORSAMPLEG}.bwa.final.bam ; else rsync ${STARTDIR}/${PATIENT_NAME}/${TASSAY}/${TUMORSAMPLEG}/${TUMORSAMPLEG}.bwa.final.bam /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/  ; fi "
+		ssh ${USER}@${DATAMOVER} " if [ -d \"\` ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \`\" ] ; then LNDIR=\`ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \` ; ln -s \${LNDIR}/${TASSAY}/${TUMORSAMPLEG}/${TUMORSAMPLEG}.bwa.final.bam /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/${TUMORSAMPLEG}.bwa.final.bam ; else rsync ${STARTDIR}/${PATIENT_NAME}/${TASSAY}/${TUMORSAMPLEG}/${TUMORSAMPLEG}.bwa.final.bam /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/  ; fi "
 		STATUS=$?
 
 		if [ "$STATUS" -ne "0" ]
@@ -339,7 +339,7 @@ then
 			exit 1
 		fi
 		
-		ssh ${USER}@dback-data2.tgen.org " if [ -d \"\` ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \`\" ] ; then LNDIR=\`ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \` ; ln -s \${LNDIR}/${TASSAY}/${TUMORSAMPLEG}/${TUMORSAMPLEG}.bwa.final.bai /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/${TUMORSAMPLEG}.bwa.final.bai ; else rsync ${STARTDIR}/${PATIENT_NAME}/${TASSAY}/${TUMORSAMPLEG}/${TUMORSAMPLEG}.bwa.final.bai /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/  ; fi "
+		ssh ${USER}@${DATAMOVER} " if [ -d \"\` ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \`\" ] ; then LNDIR=\`ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \` ; ln -s \${LNDIR}/${TASSAY}/${TUMORSAMPLEG}/${TUMORSAMPLEG}.bwa.final.bai /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/${TUMORSAMPLEG}.bwa.final.bai ; else rsync ${STARTDIR}/${PATIENT_NAME}/${TASSAY}/${TUMORSAMPLEG}/${TUMORSAMPLEG}.bwa.final.bai /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/  ; fi "
 		STATUS=$?
 
 		if [ "$STATUS" -ne "0" ]
@@ -353,7 +353,7 @@ then
 
 
 		# rsync Normal WGS BAM
-		ssh ${USER}@dback-data2.tgen.org " if [ -d \"\` ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \`\" ] ; then LNDIR=\`ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \` ; ln -s \${LNDIR}/${NASSAY}/${NORMALSAMPLEG}/${NORMALSAMPLEG}.bwa.final.bam /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/${NORMALSAMPLEG}.bwa.final.bam ; else rsync ${STARTDIR}/${PATIENT_NAME}/${NASSAY}/${NORMALSAMPLEG}/${NORMALSAMPLEG}.bwa.final.bam /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/  ; fi "
+		ssh ${USER}@${DATAMOVER} " if [ -d \"\` ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \`\" ] ; then LNDIR=\`ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \` ; ln -s \${LNDIR}/${NASSAY}/${NORMALSAMPLEG}/${NORMALSAMPLEG}.bwa.final.bam /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/${NORMALSAMPLEG}.bwa.final.bam ; else rsync ${STARTDIR}/${PATIENT_NAME}/${NASSAY}/${NORMALSAMPLEG}/${NORMALSAMPLEG}.bwa.final.bam /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/  ; fi "
 		STATUS=$?
 
 		if [ "$STATUS" -ne "0" ]
@@ -365,7 +365,7 @@ then
 			exit 1
 		fi
 		
-		ssh ${USER}@dback-data2.tgen.org " if [ -d \"\` ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \`\" ] ; then LNDIR=\`ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \` ; ln -s \${LNDIR}/${NASSAY}/${NORMALSAMPLEG}/${NORMALSAMPLEG}.bwa.final.bai /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/${NORMALSAMPLEG}.bwa.final.bai ; else rsync ${STARTDIR}/${PATIENT_NAME}/${NASSAY}/${NORMALSAMPLEG}/${NORMALSAMPLEG}.bwa.final.bai /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/  ; fi "
+		ssh ${USER}@${DATAMOVER} " if [ -d \"\` ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \`\" ] ; then LNDIR=\`ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \` ; ln -s \${LNDIR}/${NASSAY}/${NORMALSAMPLEG}/${NORMALSAMPLEG}.bwa.final.bai /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/${NORMALSAMPLEG}.bwa.final.bai ; else rsync ${STARTDIR}/${PATIENT_NAME}/${NASSAY}/${NORMALSAMPLEG}/${NORMALSAMPLEG}.bwa.final.bai /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/  ; fi "
 		STATUS=$?
 
 		if [ "$STATUS" -ne "0" ]
@@ -389,7 +389,7 @@ DIR=/scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/${ASSAY}/${RNASAMPLE
 
 if [ ${TOPHATONLY} = 1 ]
 then
-	ssh ${USER}@dback-login1.tgen.org "source /etc/profile ; cd ${DIR} ; sbatch -n 1 -N 1 --cpus-per-task 16 --mem-per-cpu 3000 --output ${HOME}/STD_OUT/%x_${RNASAMPLEID}_%j.out --export FASTQR1LIST=${FASTQR1LIST},FASTQR2LIST=${FASTQR2LIST},DIR=${DIR},BASEDIR=${BASEDIR},JOBSDIR=${JOBSDIR},SAMPLE=${RNASAMPLEID},STARTDIR="${STARTDIR}",RNATYPE="${RNATYPE}",ASSAY="${ASSAY}",RNASAMPLEID="${RNASAMPLEID}",LIBTYPE="${LIBTYPE}",PATIENT_NAME="${PATIENT_NAME}",RNACHECK="${RNACHECK}" ${JOBSDIR}/tophatFusion_plus_post.pbs "
+	ssh ${USER}@dback-login1.tgen.org "source /etc/profile ; cd ${DIR} ; sbatch -n 1 -N 1 --cpus-per-task 16 --mem-per-cpu 3000 --output ${HOME}/STD_OUT/%x_${RNASAMPLEID}_%j.out --export DATAMOVERIP=${DATAMOVERIP},DATAMOVER=${DATAMOVER},FASTQR1LIST=${FASTQR1LIST},FASTQR2LIST=${FASTQR2LIST},DIR=${DIR},BASEDIR=${BASEDIR},JOBSDIR=${JOBSDIR},SAMPLE=${RNASAMPLEID},STARTDIR="${STARTDIR}",RNATYPE="${RNATYPE}",ASSAY="${ASSAY}",RNASAMPLEID="${RNASAMPLEID}",LIBTYPE="${LIBTYPE}",PATIENT_NAME="${PATIENT_NAME}",RNACHECK="${RNACHECK}" ${JOBSDIR}/tophatFusion_plus_post.pbs "
 	
 	if [ $? -ne 0 ]
 	then
@@ -404,7 +404,7 @@ if [ ${FUSIONONLY} = 0 ]
 then
 
 	# Salmon cDNA
-	ssh ${USER}@dback-login1.tgen.org "source /etc/profile ; cd ${DIR} ; sbatch -n 1 -N 1 --cpus-per-task 16 --output ${HOME}/STD_OUT/%x_${RNASAMPLEID}_%j.out --export DIR=${DIR},BASEDIR=${BASEDIR},JOBSDIR=${JOBSDIR},SAMPLE=${RNASAMPLEID},STARTDIR="${STARTDIR}",RNATYPE="${RNATYPE}",ASSAY="${ASSAY}",RNASAMPLEID="${RNASAMPLEID}",LIBTYPE="${LIBTYPE}",PATIENT_NAME="${PATIENT_NAME}",RNACHECK="${RNACHECK}" ${JOBSDIR}/salmon_cDNA.pbs " 
+	ssh ${USER}@dback-login1.tgen.org "source /etc/profile ; cd ${DIR} ; sbatch -n 1 -N 1 --cpus-per-task 16 --output ${HOME}/STD_OUT/%x_${RNASAMPLEID}_%j.out --export DATAMOVERIP=${DATAMOVERIP},DATAMOVER=${DATAMOVER},DIR=${DIR},BASEDIR=${BASEDIR},JOBSDIR=${JOBSDIR},SAMPLE=${RNASAMPLEID},STARTDIR="${STARTDIR}",RNATYPE="${RNATYPE}",ASSAY="${ASSAY}",RNASAMPLEID="${RNASAMPLEID}",LIBTYPE="${LIBTYPE}",PATIENT_NAME="${PATIENT_NAME}",RNACHECK="${RNACHECK}" ${JOBSDIR}/salmon_cDNA.pbs " 
 
 	if [ $? -ne 0 ]
 	then
@@ -417,7 +417,7 @@ then
 
 	# Salmon GTF
 
-	ssh ${USER}@dback-login1.tgen.org "source /etc/profile ; cd ${DIR} ; sbatch -n 1 -N 1 --cpus-per-task 16 --output ${HOME}/STD_OUT/%x_${RNASAMPLEID}_%j.out --export DIR=${DIR},BASEDIR=${BASEDIR},JOBSDIR=${JOBSDIR},SAMPLE=${RNASAMPLEID},STARTDIR="${STARTDIR}",RNATYPE="${RNATYPE}",ASSAY="${ASSAY}",RNASAMPLEID="${RNASAMPLEID}",LIBTYPE="${LIBTYPE}",PATIENT_NAME="${PATIENT_NAME}",RNACHECK="${RNACHECK}" ${JOBSDIR}/salmon_GTF.pbs "
+	ssh ${USER}@dback-login1.tgen.org "source /etc/profile ; cd ${DIR} ; sbatch -n 1 -N 1 --cpus-per-task 16 --output ${HOME}/STD_OUT/%x_${RNASAMPLEID}_%j.out --export DATAMOVERIP=${DATAMOVERIP},DATAMOVER=${DATAMOVER},DIR=${DIR},BASEDIR=${BASEDIR},JOBSDIR=${JOBSDIR},SAMPLE=${RNASAMPLEID},STARTDIR="${STARTDIR}",RNATYPE="${RNATYPE}",ASSAY="${ASSAY}",RNASAMPLEID="${RNASAMPLEID}",LIBTYPE="${LIBTYPE}",PATIENT_NAME="${PATIENT_NAME}",RNACHECK="${RNACHECK}" ${JOBSDIR}/salmon_GTF.pbs "
 
 	if [ $? -ne 0 ]
 	then
@@ -430,7 +430,7 @@ then
 
 	# Salmon GTF V7.2
 
-	SALMONJOBID=$( ssh ${USER}@dback-login1.tgen.org "source /etc/profile ; cd ${DIR} ; sbatch -n 1 -N 1 --cpus-per-task 16 --parsable --output ${HOME}/STD_OUT/%x_${RNASAMPLEID}_%j.out --export DIR=${DIR},BASEDIR=${BASEDIR},JOBSDIR=${JOBSDIR},SAMPLE=${RNASAMPLEID},STARTDIR="${STARTDIR}",RNATYPE="${RNATYPE}",ASSAY="${ASSAY}",RNASAMPLEID="${RNASAMPLEID}",LIBTYPE="${LIBTYPE}",PATIENT_NAME="${PATIENT_NAME}",RNACHECK="${RNACHECK}" ${JOBSDIR}/salmon_GTF_v7.2.pbs " )
+	SALMONJOBID=$( ssh ${USER}@dback-login1.tgen.org "source /etc/profile ; cd ${DIR} ; sbatch -n 1 -N 1 --cpus-per-task 16 --parsable --output ${HOME}/STD_OUT/%x_${RNASAMPLEID}_%j.out --export DATAMOVERIP=${DATAMOVERIP},DATAMOVER=${DATAMOVER},DIR=${DIR},BASEDIR=${BASEDIR},JOBSDIR=${JOBSDIR},SAMPLE=${RNASAMPLEID},STARTDIR="${STARTDIR}",RNATYPE="${RNATYPE}",ASSAY="${ASSAY}",RNASAMPLEID="${RNASAMPLEID}",LIBTYPE="${LIBTYPE}",PATIENT_NAME="${PATIENT_NAME}",RNACHECK="${RNACHECK}" ${JOBSDIR}/salmon_GTF_v7.2.pbs " )
 
 	if [ $? -ne 0 ]
 	then
@@ -448,7 +448,7 @@ DIR2=/scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${R
 
 if [ ${FUSIONONLY} = 1 ]
 then
-	ssh ${USER}@dback-login1.tgen.org "source /etc/profile ; cd ${DIR2} ; sbatch -n 1 -N 1 --cpus-per-task 16 --output ${HOME}/STD_OUT/%x_${RNASAMPLEID}_%j.out --export FUSIONONLY=${FUSIONONLY},DIR2=${DIR2},DIR=${DIR},TUMORSAMPLEG=${TUMORSAMPLEG},NORMALSAMPLEG=${NORMALSAMPLEG},BASEDIR=${BASEDIR},JOBSDIR=${JOBSDIR},SAMPLE=${RNASAMPLEID},STARTDIR="${STARTDIR}",RNATYPE="${RNATYPE}",ASSAY="${ASSAY}",RNASAMPLEID="${RNASAMPLEID}",LIBTYPE="${LIBTYPE}",PATIENT_NAME="${PATIENT_NAME}",RNACHECK2="${RNACHECK2}" ${JOBSDIR}/fusionValidator.pbs "
+	ssh ${USER}@dback-login1.tgen.org "source /etc/profile ; cd ${DIR2} ; sbatch -n 1 -N 1 --cpus-per-task 16 --output ${HOME}/STD_OUT/%x_${RNASAMPLEID}_%j.out --export DATAMOVERIP=${DATAMOVERIP},DATAMOVER=${DATAMOVER},FUSIONONLY=${FUSIONONLY},DIR2=${DIR2},DIR=${DIR},TUMORSAMPLEG=${TUMORSAMPLEG},NORMALSAMPLEG=${NORMALSAMPLEG},BASEDIR=${BASEDIR},JOBSDIR=${JOBSDIR},SAMPLE=${RNASAMPLEID},STARTDIR="${STARTDIR}",RNATYPE="${RNATYPE}",ASSAY="${ASSAY}",RNASAMPLEID="${RNASAMPLEID}",LIBTYPE="${LIBTYPE}",PATIENT_NAME="${PATIENT_NAME}",RNACHECK2="${RNACHECK2}" ${JOBSDIR}/fusionValidator.pbs "
 	if [ $? -ne 0 ]
 	then
 			rm FusionValidator_In_Progress
@@ -457,7 +457,7 @@ then
 			echo Failed to rsync normal bai for fusionValidator for ${RNASAMPLEID} >> fusionValidator/${RNASAMPLEID}/FusionValidator_Fail
 	fi
 else
-	ssh ${USER}@dback-login1.tgen.org "source /etc/profile ; cd ${DIR2} ; sbatch -n 1 -N 1 --cpus-per-task 16 --dependency=${SALMONJOBID} --output ${HOME}/STD_OUT/%x_${RNASAMPLEID}_%j.out --export FUSIONONLY=${FUSIONONLY},DIR2=${DIR2},DIR=${DIR},BASEDIR=${BASEDIR},JOBSDIR=${JOBSDIR},SAMPLE=${RNASAMPLEID},STARTDIR="${STARTDIR}",RNATYPE="${RNATYPE}",ASSAY="${ASSAY}",RNASAMPLEID="${RNASAMPLEID}",LIBTYPE="${LIBTYPE}",PATIENT_NAME="${PATIENT_NAME}",RNACHECK2="${RNACHECK2}" ${JOBSDIR}/fusionValidator.pbs "
+	ssh ${USER}@dback-login1.tgen.org "source /etc/profile ; cd ${DIR2} ; sbatch -n 1 -N 1 --cpus-per-task 16 --dependency=${SALMONJOBID} --output ${HOME}/STD_OUT/%x_${RNASAMPLEID}_%j.out --export DATAMOVERIP=${DATAMOVERIP},DATAMOVER=${DATAMOVER},FUSIONONLY=${FUSIONONLY},DIR2=${DIR2},DIR=${DIR},BASEDIR=${BASEDIR},JOBSDIR=${JOBSDIR},SAMPLE=${RNASAMPLEID},STARTDIR="${STARTDIR}",RNATYPE="${RNATYPE}",ASSAY="${ASSAY}",RNASAMPLEID="${RNASAMPLEID}",LIBTYPE="${LIBTYPE}",PATIENT_NAME="${PATIENT_NAME}",RNACHECK2="${RNACHECK2}" ${JOBSDIR}/fusionValidator.pbs "
 	if [ $? -ne 0 ]
 	then
 			rm FusionValidator_In_Progress
@@ -473,7 +473,7 @@ if [ ${FUSIONONLY} = 0 ]
 then
 	# Kallisto cDNA
 
-	ssh ${USER}@dback-login1.tgen.org "source /etc/profile ; cd ${DIR} ; sbatch -n 1 -N 1 --cpus-per-task 16 --output ${HOME}/STD_OUT/%x_${RNASAMPLEID}_%j.out --export DIR=${DIR},BASEDIR=${BASEDIR},JOBSDIR=${JOBSDIR},SAMPLE=${RNASAMPLEID},STARTDIR="${STARTDIR}",RNATYPE="${RNATYPE}",ASSAY="${ASSAY}",RNASAMPLEID="${RNASAMPLEID}",LIBTYPE="${LIBTYPE}",PATIENT_NAME="${PATIENT_NAME}",RNACHECK="${RNACHECK}" ${JOBSDIR}/kallisto_cDNA.pbs "
+	ssh ${USER}@dback-login1.tgen.org "source /etc/profile ; cd ${DIR} ; sbatch -n 1 -N 1 --cpus-per-task 16 --output ${HOME}/STD_OUT/%x_${RNASAMPLEID}_%j.out --export DATAMOVERIP=${DATAMOVERIP},DATAMOVER=${DATAMOVER},DIR=${DIR},BASEDIR=${BASEDIR},JOBSDIR=${JOBSDIR},SAMPLE=${RNASAMPLEID},STARTDIR="${STARTDIR}",RNATYPE="${RNATYPE}",ASSAY="${ASSAY}",RNASAMPLEID="${RNASAMPLEID}",LIBTYPE="${LIBTYPE}",PATIENT_NAME="${PATIENT_NAME}",RNACHECK="${RNACHECK}" ${JOBSDIR}/kallisto_cDNA.pbs "
 
 	if [ $? -ne 0 ]
 	then
@@ -486,7 +486,7 @@ then
 
 	# Kallisto GTF
 
-	ssh ${USER}@dback-login1.tgen.org "source /etc/profile ; cd ${DIR} ; sbatch -n 1 -N 1 --cpus-per-task 16 --output ${HOME}/STD_OUT/%x_${RNASAMPLEID}_%j.out --export DIR=${DIR},BASEDIR=${BASEDIR},JOBSDIR=${JOBSDIR},SAMPLE=${RNASAMPLEID},STARTDIR="${STARTDIR}",RNATYPE="${RNATYPE}",ASSAY="${ASSAY}",RNASAMPLEID="${RNASAMPLEID}",LIBTYPE="${LIBTYPE}",PATIENT_NAME="${PATIENT_NAME}",RNACHECK="${RNACHECK}" ${JOBSDIR}/kallisto_GTF.pbs "
+	ssh ${USER}@dback-login1.tgen.org "source /etc/profile ; cd ${DIR} ; sbatch -n 1 -N 1 --cpus-per-task 16 --output ${HOME}/STD_OUT/%x_${RNASAMPLEID}_%j.out --export DATAMOVERIP=${DATAMOVERIP},DATAMOVER=${DATAMOVER},DIR=${DIR},BASEDIR=${BASEDIR},JOBSDIR=${JOBSDIR},SAMPLE=${RNASAMPLEID},STARTDIR="${STARTDIR}",RNATYPE="${RNATYPE}",ASSAY="${ASSAY}",RNASAMPLEID="${RNASAMPLEID}",LIBTYPE="${LIBTYPE}",PATIENT_NAME="${PATIENT_NAME}",RNACHECK="${RNACHECK}" ${JOBSDIR}/kallisto_GTF.pbs "
 
 	if [ $? -ne 0 ]
 	then

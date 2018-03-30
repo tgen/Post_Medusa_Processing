@@ -349,7 +349,7 @@ then
 	        for fileToSave in `find ${DIR} -name "*$extToCopy"`
 	        do
 	        	fileName=`basename $fileToSave`
-	                ssh ${USER}@10.48.73.18 "rsync $fileToSave ${STARTDIR}/${PATIENT_NAME}/cna_manual_2016/${EXOMEPAIR}_exo/ "
+	                ssh ${USER}@${DATAMOVERIP} "rsync $fileToSave ${STARTDIR}/${PATIENT_NAME}/cna_manual_2016/${EXOMEPAIR}_exo/ "
                         
 			if [ $? -ne 0 ]
 			then
@@ -360,42 +360,42 @@ then
 		
 	done
 	
-	ssh ${USER}@10.48.73.18 "rsync ${DIR}/${NORMALSAMPLE}.proj.md.jr.bam.clc.cln.dat.cnaStats ${STARTDIR}/${PATIENT_NAME}/stats/${NORMALSAMPLE}.proj.md.jr.bam.clc.cln.dat.cnaManual2016Stats"
+	ssh ${USER}@${DATAMOVERIP} "rsync ${DIR}/${NORMALSAMPLE}.proj.md.jr.bam.clc.cln.dat.cnaStats ${STARTDIR}/${PATIENT_NAME}/stats/${NORMALSAMPLE}.proj.md.jr.bam.clc.cln.dat.cnaManual2016Stats"
 	
 	if [ $? -ne 0 ]
 	then
 		fails=1
 	fi
 
-	ssh ${USER}@10.48.73.18 "rsync ${DIR}/${TUMORSAMPLE}.proj.md.jr.bam.clc.cln.dat.cnaStats ${STARTDIR}/${PATIENT_NAME}/stats/${TUMORSAMPLE}.proj.md.jr.bam.clc.cln.dat.cnaManual2016Stats"
+	ssh ${USER}@${DATAMOVERIP} "rsync ${DIR}/${TUMORSAMPLE}.proj.md.jr.bam.clc.cln.dat.cnaStats ${STARTDIR}/${PATIENT_NAME}/stats/${TUMORSAMPLE}.proj.md.jr.bam.clc.cln.dat.cnaManual2016Stats"
 
 	if [ $? -ne 0 ]
         then
                 fails=1
         fi
 	
-	ssh ${USER}@10.48.73.18 "rsync ${DIR}/${OFILE}_exo.filt2012.dlrs ${STARTDIR}/${PATIENT_NAME}/stats/${NORMALSAMPLE}_exo.filt2012.dlrs "
+	ssh ${USER}@${DATAMOVERIP} "rsync ${DIR}/${OFILE}_exo.filt2012.dlrs ${STARTDIR}/${PATIENT_NAME}/stats/${NORMALSAMPLE}_exo.filt2012.dlrs "
 
 	if [ $? -ne 0 ]
         then
                 fails=1
         fi
 
-	ssh ${USER}@10.48.73.18 "rsync ${DIR}/${OFILE}_exo.filt2012.dlrs ${STARTDIR}/${PATIENT_NAME}/stats/${TUMORSAMPLE}_exo.filt2012.dlrs "
+	ssh ${USER}@${DATAMOVERIP} "rsync ${DIR}/${OFILE}_exo.filt2012.dlrs ${STARTDIR}/${PATIENT_NAME}/stats/${TUMORSAMPLE}_exo.filt2012.dlrs "
 
         if [ $? -ne 0 ]
         then
                 fails=1
         fi
 
-	ssh ${USER}@10.48.73.18 "rsync ${DIR}/${OFILE}_exo.filt2016.dlrs ${STARTDIR}/${PATIENT_NAME}/stats/${NORMALSAMPLE}_exo.filt2016.dlrs "
+	ssh ${USER}@${DATAMOVERIP} "rsync ${DIR}/${OFILE}_exo.filt2016.dlrs ${STARTDIR}/${PATIENT_NAME}/stats/${NORMALSAMPLE}_exo.filt2016.dlrs "
 
         if [ $? -ne 0 ]
         then
                 fails=1
         fi
 
-	ssh ${USER}@10.48.73.18 "rsync ${DIR}/${OFILE}_exo.filt2016.dlrs ${STARTDIR}/${PATIENT_NAME}/stats/${TUMORSAMPLE}_exo.filt2016.dlrs "
+	ssh ${USER}@${DATAMOVERIP} "rsync ${DIR}/${OFILE}_exo.filt2016.dlrs ${STARTDIR}/${PATIENT_NAME}/stats/${TUMORSAMPLE}_exo.filt2016.dlrs "
 
         if [ $? -ne 0 ]
         then
@@ -403,7 +403,7 @@ then
         fi
 
 else
-	ssh ${USER}@10.48.73.18 "rm ${STARTDIR}/${PATIENT_NAME}/cna_manual_2016/${EXOMEPAIR}_exo/CNA_Manual_In_Progress ; \
+	ssh ${USER}@${DATAMOVERIP} "rm ${STARTDIR}/${PATIENT_NAME}/cna_manual_2016/${EXOMEPAIR}_exo/CNA_Manual_In_Progress ; \
 		rm ${STARTDIR}/${PATIENT_NAME}/CNA_Manual_In_Progress ; \
 		touch ${STARTDIR}/${PATIENT_NAME}/CNA_Manual_Fail ; \
 		echo CNA pbs script failed for ${EXOMEPAIR} >> ${STARTDIR}/${PATIENT_NAME}/cna_manual_2016/${EXOMEPAIR}_exo/CNA_Manual_Fail ; \
@@ -413,7 +413,7 @@ fi
 
 if [ $fails -eq 0 ] && [ ${FAILED} = 0 ] 
 then
-	ssh ${USER}@10.48.73.18 "rm ${STARTDIR}/${PATIENT_NAME}/cna_manual_2016/${EXOMEPAIR}_exo/CNA_Manual_In_Progress ; \
+	ssh ${USER}@${DATAMOVERIP} "rm ${STARTDIR}/${PATIENT_NAME}/cna_manual_2016/${EXOMEPAIR}_exo/CNA_Manual_In_Progress ; \
 		touch ${STARTDIR}/${PATIENT_NAME}/cna_manual_2016/${EXOMEPAIR}_exo/CNA_Manual_Complete ; \
 		COMPLETE=0 ; \
 		for XPAIR in \`echo ${EXPECTEDPAIRS} | sed 's/@/\n/g'\` 
@@ -433,7 +433,7 @@ else
 	if [ $fails -ne 0 ] && [ ${FAILED} = 0 ]
 	then
 	
-		ssh ${USER}@10.48.73.18 "rm ${STARTDIR}/${PATIENT_NAME}/cna_manual_2016/${EXOMEPAIR}_exo/CNA_Manual_In_Progress ; \
+		ssh ${USER}@${DATAMOVERIP} "rm ${STARTDIR}/${PATIENT_NAME}/cna_manual_2016/${EXOMEPAIR}_exo/CNA_Manual_In_Progress ; \
         	        echo CNA pbs script failed to rsync back to isilon for ${EXOMEPAIR} >> ${STARTDIR}/${PATIENT_NAME}/cna_manual_2016/${EXOMEPAIR}_exo/CNA_Manual_Fail ; \
         	        echo CNA pbs script failed to rsync back to isilon for ${EXOMEPAIR} | mailx -s "Post_Medusa_Processing_Failed" ${USER}@tgen.org "
 		

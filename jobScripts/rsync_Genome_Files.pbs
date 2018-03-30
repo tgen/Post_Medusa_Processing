@@ -16,7 +16,7 @@ then
 
 	#{{{ 
 
-	ssh ${USER}@dback-data1.tgen.org "mkdir -p /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_unfi"
+	ssh ${USER}@${DATAMOVER} "mkdir -p /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_unfi"
 
 	if [ $? -ne 0 ]
 	then
@@ -32,7 +32,7 @@ then
 	        exit 1
 	fi
 
-	ssh ${USER}@dback-data1.tgen.org "mkdir -p /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_filt2012"
+	ssh ${USER}@${DATAMOVER} "mkdir -p /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_filt2012"
 
 	if [ $? -ne 0 ]
 	then
@@ -48,7 +48,7 @@ then
 	        exit 1
 	fi
 
-	ssh ${USER}@dback-data1.tgen.org "mkdir -p /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_filt2016"
+	ssh ${USER}@${DATAMOVER} "mkdir -p /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_filt2016"
 
 	if [ $? -ne 0 ]
 	then
@@ -71,7 +71,7 @@ then
 	#{{{
 
 	# Genome Normal Dat
-	ssh ${USER}@dback-data1.tgen.org "rsync ${STARTDIR}/${PATIENT_NAME}/${NASSAY}/${NORMALSAMPLEG}/${NORMALDAT} /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_unfi/ "
+	ssh ${USER}@${DATAMOVER} "rsync ${STARTDIR}/${PATIENT_NAME}/${NASSAY}/${NORMALSAMPLEG}/${NORMALDAT} /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_unfi/ "
 
 	if [ $? -ne 0 ]
 	then
@@ -89,7 +89,7 @@ then
 
 	# Genome Tumor Dat
 
-	ssh ${USER}@dback-data1.tgen.org "rsync ${STARTDIR}/${PATIENT_NAME}/${TASSAY}/${TUMORSAMPLEG}/${TUMORDAT} /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_unfi/ "
+	ssh ${USER}@${DATAMOVER} "rsync ${STARTDIR}/${PATIENT_NAME}/${TASSAY}/${TUMORSAMPLEG}/${TUMORDAT} /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_unfi/ "
 
 	if [ $? -ne 0 ]
 	then
@@ -107,7 +107,7 @@ then
 
 	# Exome Normal HS Metrics
 
-	ssh ${USER}@dback-data1.tgen.org "rsync ${STARTDIR}/${PATIENT_NAME}/stats/${NORMALSAMPLE}.proj.md.jr.bam.picHSMetrics /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_unfi/ "
+	ssh ${USER}@${DATAMOVER} "rsync ${STARTDIR}/${PATIENT_NAME}/stats/${NORMALSAMPLE}.proj.md.jr.bam.picHSMetrics /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_unfi/ "
 
 	if [ $? -ne 0 ]
 	then
@@ -125,7 +125,7 @@ then
 
 	# Exome Tumor HS Metrics
 
-	ssh ${USER}@dback-data1.tgen.org "rsync ${STARTDIR}/${PATIENT_NAME}/stats/${TUMORSAMPLE}.proj.md.jr.bam.picHSMetrics /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_unfi/ "
+	ssh ${USER}@${DATAMOVER} "rsync ${STARTDIR}/${PATIENT_NAME}/stats/${TUMORSAMPLE}.proj.md.jr.bam.picHSMetrics /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_unfi/ "
 
 	if [ $? -ne 0 ]
 	then
@@ -143,7 +143,7 @@ then
 
 	# Exome HC VCF
 
-	ssh ${USER}@dback-data1.tgen.org "rsync ${STARTDIR}/${PATIENT_NAME}/hc/${EXOMEPAIR}/*.HC_All.snpEff.vcf /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_unfi/ "
+	ssh ${USER}@${DATAMOVER} "rsync ${STARTDIR}/${PATIENT_NAME}/hc/${EXOMEPAIR}/*.HC_All.snpEff.vcf /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_unfi/ "
 
 	if [ $? -ne 0 ]
 	then
@@ -166,7 +166,7 @@ then
 	#{{{
 
 	# Genome Normal Dat
-	ssh ${USER}@dback-data1.tgen.org "rsync ${STARTDIR}/${PATIENT_NAME}/${NASSAY}/${NORMALSAMPLEG}/${NORMALDAT} /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_filt2012/ "
+	ssh ${USER}@${DATAMOVER} "rsync ${STARTDIR}/${PATIENT_NAME}/${NASSAY}/${NORMALSAMPLEG}/${NORMALDAT} /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_filt2012/ "
 
 	if [ $? -ne 0 ]
 	then
@@ -184,7 +184,7 @@ then
 
 	# Genome Tumor Dat
 
-	ssh ${USER}@dback-data1.tgen.org "rsync ${STARTDIR}/${PATIENT_NAME}/${TASSAY}/${TUMORSAMPLEG}/${TUMORDAT} /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_filt2012/ "
+	ssh ${USER}@${DATAMOVER} "rsync ${STARTDIR}/${PATIENT_NAME}/${TASSAY}/${TUMORSAMPLEG}/${TUMORDAT} /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_filt2012/ "
 
 	if [ $? -ne 0 ]
 	then
@@ -202,7 +202,7 @@ then
 
 	# Exome Normal HS Metrics
 
-	ssh ${USER}@dback-data1.tgen.org "rsync ${STARTDIR}/${PATIENT_NAME}/stats/${NORMALSAMPLE}.proj.md.jr.bam.picHSMetrics /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_filt2012/ "
+	ssh ${USER}@${DATAMOVER} "rsync ${STARTDIR}/${PATIENT_NAME}/stats/${NORMALSAMPLE}.proj.md.jr.bam.picHSMetrics /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_filt2012/ "
 
 	if [ $? -ne 0 ]
 	then
@@ -220,7 +220,7 @@ then
 
 	# Exome Tumor HS Metrics
 
-	ssh ${USER}@dback-data1.tgen.org "rsync ${STARTDIR}/${PATIENT_NAME}/stats/${TUMORSAMPLE}.proj.md.jr.bam.picHSMetrics /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_filt2012/ "
+	ssh ${USER}@${DATAMOVER} "rsync ${STARTDIR}/${PATIENT_NAME}/stats/${TUMORSAMPLE}.proj.md.jr.bam.picHSMetrics /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_filt2012/ "
 
 	if [ $? -ne 0 ]
 	then
@@ -238,7 +238,7 @@ then
 
 	# Exome HC VCF
 
-	ssh ${USER}@dback-data1.tgen.org "rsync ${STARTDIR}/${PATIENT_NAME}/hc/${EXOMEPAIR}/*.HC_All.snpEff.vcf /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_filt2012/ "
+	ssh ${USER}@${DATAMOVER} "rsync ${STARTDIR}/${PATIENT_NAME}/hc/${EXOMEPAIR}/*.HC_All.snpEff.vcf /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_filt2012/ "
 
 	if [ $? -ne 0 ]
 	then
@@ -261,7 +261,7 @@ then
 	#{{{
 
 	# Genome Normal Dat
-	ssh ${USER}@dback-data1.tgen.org "rsync ${STARTDIR}/${PATIENT_NAME}/${NASSAY}/${NORMALSAMPLEG}/${NORMALDAT} /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_filt2016/ "
+	ssh ${USER}@${DATAMOVER} "rsync ${STARTDIR}/${PATIENT_NAME}/${NASSAY}/${NORMALSAMPLEG}/${NORMALDAT} /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_filt2016/ "
 
 	if [ $? -ne 0 ]
 	then
@@ -279,7 +279,7 @@ then
 
 	# Genome Tumor Dat
 
-	ssh ${USER}@dback-data1.tgen.org "rsync ${STARTDIR}/${PATIENT_NAME}/${TASSAY}/${TUMORSAMPLEG}/${TUMORDAT} /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_filt2016/ "
+	ssh ${USER}@${DATAMOVER} "rsync ${STARTDIR}/${PATIENT_NAME}/${TASSAY}/${TUMORSAMPLEG}/${TUMORDAT} /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_filt2016/ "
 
 	if [ $? -ne 0 ]
 	then
@@ -297,7 +297,7 @@ then
 
 	# Exome Normal HS Metrics
 
-	ssh ${USER}@dback-data1.tgen.org "rsync ${STARTDIR}/${PATIENT_NAME}/stats/${NORMALSAMPLE}.proj.md.jr.bam.picHSMetrics /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_filt2016/ "
+	ssh ${USER}@${DATAMOVER} "rsync ${STARTDIR}/${PATIENT_NAME}/stats/${NORMALSAMPLE}.proj.md.jr.bam.picHSMetrics /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_filt2016/ "
 
 	if [ $? -ne 0 ]
 	then
@@ -315,7 +315,7 @@ then
 
 	# Exome Tumor HS Metrics
 
-	ssh ${USER}@dback-data1.tgen.org "rsync ${STARTDIR}/${PATIENT_NAME}/stats/${TUMORSAMPLE}.proj.md.jr.bam.picHSMetrics /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_filt2016/ "
+	ssh ${USER}@${DATAMOVER} "rsync ${STARTDIR}/${PATIENT_NAME}/stats/${TUMORSAMPLE}.proj.md.jr.bam.picHSMetrics /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_filt2016/ "
 
 	if [ $? -ne 0 ]
 	then
@@ -333,7 +333,7 @@ then
 
 	# Exome HC VCF
 
-	ssh ${USER}@dback-data1.tgen.org "rsync ${STARTDIR}/${PATIENT_NAME}/hc/${EXOMEPAIR}/*.HC_All.snpEff.vcf /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_filt2016/ "
+	ssh ${USER}@${DATAMOVER} "rsync ${STARTDIR}/${PATIENT_NAME}/hc/${EXOMEPAIR}/*.HC_All.snpEff.vcf /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_filt2016/ "
 
 	if [ $? -ne 0 ]
 	then
@@ -358,7 +358,7 @@ then
 	DIR=/scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_unfi
 
 	# Unfi CNA
-	ssh ${USER}@dback-login1.tgen.org "source /etc/profile ; cd ${DIR} ; sbatch -n 1 -N 1 --mem-per-cpu 3000 --cpus-per-task 4 --output ${HOME}/STD_OUT/%x_${GENOMEPAIR}_%j.out --export BASEDIR=${BASEDIR},JOBSDIR=${JOBSDIR},STARTDIR="${STARTDIR}",BEDFILE=${BEDFILE},GENOMEPAIR=${GENOMEPAIR},PATIENT_NAME="${PATIENT_NAME}",DIR=${DIR},NORMALSAMPLE=${NORMALSAMPLE},TUMORSAMPLE=${TUMORSAMPLE},VCF="${EXOMEPAIR}.HC_All.snpEff.vcf",NORMALDAT="${NORMALSAMPLEG}.proj.md.jr.bam.clc.cln.dat",TUMORDAT="${TUMORSAMPLEG}.proj.md.jr.bam.clc.cln.dat",NORMALSAMPLEG="${NORMALSAMPLEG}",TUMORSAMPLEG="${TUMORSAMPLEG}",OFILE=${GENOMEPAIR},EXPECTEDPAIRS=${EXPECTEDPAIRS} ${JOBSDIR}/ngs_cna2015_WGcenterWithExomes_V4.pbs "
+	ssh ${USER}@dback-login1.tgen.org "source /etc/profile ; cd ${DIR} ; sbatch -n 1 -N 1 --mem-per-cpu 3000 --cpus-per-task 4 --output ${HOME}/STD_OUT/%x_${GENOMEPAIR}_%j.out --export DATAMOVERIP=${DATAMOVERIP},DATAMOVER=${DATAMOVER},BASEDIR=${BASEDIR},JOBSDIR=${JOBSDIR},STARTDIR="${STARTDIR}",BEDFILE=${BEDFILE},GENOMEPAIR=${GENOMEPAIR},PATIENT_NAME="${PATIENT_NAME}",DIR=${DIR},NORMALSAMPLE=${NORMALSAMPLE},TUMORSAMPLE=${TUMORSAMPLE},VCF="${EXOMEPAIR}.HC_All.snpEff.vcf",NORMALDAT="${NORMALSAMPLEG}.proj.md.jr.bam.clc.cln.dat",TUMORDAT="${TUMORSAMPLEG}.proj.md.jr.bam.clc.cln.dat",NORMALSAMPLEG="${NORMALSAMPLEG}",TUMORSAMPLEG="${TUMORSAMPLEG}",OFILE=${GENOMEPAIR},EXPECTEDPAIRS=${EXPECTEDPAIRS} ${JOBSDIR}/ngs_cna2015_WGcenterWithExomes_V4.pbs "
 
 	if [ $? -ne 0 ]
 	then
@@ -377,7 +377,7 @@ then
 	DIR=/scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_filt2012
 
 	# Filt CNA
-	ssh ${USER}@dback-login1.tgen.org "source /etc/profile ; cd ${DIR} ; sbatch -n 1 -N 1 --mem-per-cpu 3000 --cpus-per-task 4 --output ${HOME}/STD_OUT/%x_${GENOMEPAIR}_%j.out --export BASEDIR=${BASEDIR},JOBSDIR=${JOBSDIR},STARTDIR="${STARTDIR}",BEDFILE=${BEDFILE},GENOMEPAIR=${GENOMEPAIR},PATIENT_NAME="${PATIENT_NAME}",DIR=${DIR},NORMALSAMPLE=${NORMALSAMPLE},TUMORSAMPLE=${TUMORSAMPLE},VCF="${EXOMEPAIR}.HC_All.snpEff.vcf",NORMALDAT="${NORMALSAMPLEG}.proj.md.jr.bam.clc.cln.dat",TUMORDAT="${TUMORSAMPLEG}.proj.md.jr.bam.clc.cln.dat",NORMALSAMPLEG="${NORMALSAMPLEG}",TUMORSAMPLEG="${TUMORSAMPLEG}",OFILE=${GENOMEPAIR},EXPECTEDPAIRS=${EXPECTEDPAIRS} ${JOBSDIR}/ngs_cna2015_WGcenterWithExomesFilt2012_V3.pbs "
+	ssh ${USER}@dback-login1.tgen.org "source /etc/profile ; cd ${DIR} ; sbatch -n 1 -N 1 --mem-per-cpu 3000 --cpus-per-task 4 --output ${HOME}/STD_OUT/%x_${GENOMEPAIR}_%j.out --export DATAMOVERIP=${DATAMOVERIP},DATAMOVER=${DATAMOVER},BASEDIR=${BASEDIR},JOBSDIR=${JOBSDIR},STARTDIR="${STARTDIR}",BEDFILE=${BEDFILE},GENOMEPAIR=${GENOMEPAIR},PATIENT_NAME="${PATIENT_NAME}",DIR=${DIR},NORMALSAMPLE=${NORMALSAMPLE},TUMORSAMPLE=${TUMORSAMPLE},VCF="${EXOMEPAIR}.HC_All.snpEff.vcf",NORMALDAT="${NORMALSAMPLEG}.proj.md.jr.bam.clc.cln.dat",TUMORDAT="${TUMORSAMPLEG}.proj.md.jr.bam.clc.cln.dat",NORMALSAMPLEG="${NORMALSAMPLEG}",TUMORSAMPLEG="${TUMORSAMPLEG}",OFILE=${GENOMEPAIR},EXPECTEDPAIRS=${EXPECTEDPAIRS} ${JOBSDIR}/ngs_cna2015_WGcenterWithExomesFilt2012_V3.pbs "
 
 	if [ $? -ne 0 ]
 	then
@@ -393,7 +393,7 @@ then
 	DIR=/scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_filt2016
 
 	# Filt CNA
-	ssh ${USER}@dback-login1.tgen.org "source /etc/profile ; cd ${DIR} ; sbatch -n 1 -N 1 --mem-per-cpu 3000 --cpus-per-task 4 --output ${HOME}/STD_OUT/%x_${GENOMEPAIR}_%j.out --export BASEDIR=${BASEDIR},JOBSDIR=${JOBSDIR},STARTDIR="${STARTDIR}",BEDFILE=${BEDFILE},GENOMEPAIR=${GENOMEPAIR},PATIENT_NAME="${PATIENT_NAME}",DIR=${DIR},NORMALSAMPLE=${NORMALSAMPLE},TUMORSAMPLE=${TUMORSAMPLE},VCF="${EXOMEPAIR}.HC_All.snpEff.vcf",NORMALDAT="${NORMALSAMPLEG}.proj.md.jr.bam.clc.cln.dat",TUMORDAT="${TUMORSAMPLEG}.proj.md.jr.bam.clc.cln.dat",NORMALSAMPLEG="${NORMALSAMPLEG}",TUMORSAMPLEG="${TUMORSAMPLEG}",OFILE=${GENOMEPAIR},EXPECTEDPAIRS=${EXPECTEDPAIRS} ${JOBSDIR}/ngs_cna2015_WGcenterWithExomesFilt2016_V3.pbs "
+	ssh ${USER}@dback-login1.tgen.org "source /etc/profile ; cd ${DIR} ; sbatch -n 1 -N 1 --mem-per-cpu 3000 --cpus-per-task 4 --output ${HOME}/STD_OUT/%x_${GENOMEPAIR}_%j.out --export DATAMOVERIP=${DATAMOVERIP},DATAMOVER=${DATAMOVER},BASEDIR=${BASEDIR},JOBSDIR=${JOBSDIR},STARTDIR="${STARTDIR}",BEDFILE=${BEDFILE},GENOMEPAIR=${GENOMEPAIR},PATIENT_NAME="${PATIENT_NAME}",DIR=${DIR},NORMALSAMPLE=${NORMALSAMPLE},TUMORSAMPLE=${TUMORSAMPLE},VCF="${EXOMEPAIR}.HC_All.snpEff.vcf",NORMALDAT="${NORMALSAMPLEG}.proj.md.jr.bam.clc.cln.dat",TUMORDAT="${TUMORSAMPLEG}.proj.md.jr.bam.clc.cln.dat",NORMALSAMPLEG="${NORMALSAMPLEG}",TUMORSAMPLEG="${TUMORSAMPLEG}",OFILE=${GENOMEPAIR},EXPECTEDPAIRS=${EXPECTEDPAIRS} ${JOBSDIR}/ngs_cna2015_WGcenterWithExomesFilt2016_V3.pbs "
 
 	if [ $? -ne 0 ]
 	then
@@ -412,7 +412,7 @@ then
 
 	DIR=/scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/delly/${GENOMEPAIR}
 
-	ssh ${USER}@dback-data1.tgen.org "mkdir -p /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/delly/${GENOMEPAIR}"
+	ssh ${USER}@${DATAMOVER} "mkdir -p /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/delly/${GENOMEPAIR}"
 
 	if [ $? -ne 0 ]
 	then
@@ -426,7 +426,7 @@ then
 
 	### Rsync needed files over to dback for delly analysis
 
-	ssh ${USER}@dback-data1.tgen.org " if [ -d \"\` ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \`\" ] ; then LNDIR=\`ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \` ; ln -s \${LNDIR}/${TASSAY}/${TUMORSAMPLEG}/${TUMORSAMPLEG}.bwa.final.bam /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/delly/${GENOMEPAIR}/${TUMORSAMPLEG}.bwa.final.bam ; else rsync ${STARTDIR}/${PATIENT_NAME}/${TASSAY}/${TUMORSAMPLEG}/${TUMORSAMPLEG}.bwa.final.bam /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/delly/${GENOMEPAIR}/  ; fi "
+	ssh ${USER}@${DATAMOVER} " if [ -d \"\` ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \`\" ] ; then LNDIR=\`ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \` ; ln -s \${LNDIR}/${TASSAY}/${TUMORSAMPLEG}/${TUMORSAMPLEG}.bwa.final.bam /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/delly/${GENOMEPAIR}/${TUMORSAMPLEG}.bwa.final.bam ; else rsync ${STARTDIR}/${PATIENT_NAME}/${TASSAY}/${TUMORSAMPLEG}/${TUMORSAMPLEG}.bwa.final.bam /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/delly/${GENOMEPAIR}/  ; fi "
 
 	if [ $? -ne 0 ]
 	then
@@ -438,7 +438,7 @@ then
         	exit 1
 	fi
 
-	ssh ${USER}@dback-data1.tgen.org " if [ -d \"\` ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \`\" ] ; then LNDIR=\`ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \` ; ln -s \${LNDIR}/${TASSAY}/${TUMORSAMPLEG}/${TUMORSAMPLEG}.bwa.final.bai /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/delly/${GENOMEPAIR}/${TUMORSAMPLEG}.bwa.final.bai ; else rsync ${STARTDIR}/${PATIENT_NAME}/${TASSAY}/${TUMORSAMPLEG}/${TUMORSAMPLEG}.bwa.final.bai /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/delly/${GENOMEPAIR}/  ; fi   "
+	ssh ${USER}@${DATAMOVER} " if [ -d \"\` ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \`\" ] ; then LNDIR=\`ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \` ; ln -s \${LNDIR}/${TASSAY}/${TUMORSAMPLEG}/${TUMORSAMPLEG}.bwa.final.bai /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/delly/${GENOMEPAIR}/${TUMORSAMPLEG}.bwa.final.bai ; else rsync ${STARTDIR}/${PATIENT_NAME}/${TASSAY}/${TUMORSAMPLEG}/${TUMORSAMPLEG}.bwa.final.bai /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/delly/${GENOMEPAIR}/  ; fi   "
 
 	if [ $? -ne 0 ]
 	then
@@ -452,7 +452,7 @@ then
 
 
 
-	ssh ${USER}@dback-data1.tgen.org " if [ -d \"\` ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \`\" ] ; then LNDIR=\`ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1\` ; ln -s \${LNDIR}/${NASSAY}/${NORMALSAMPLEG}/${NORMALSAMPLEG}.bwa.final.bam /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/delly/${GENOMEPAIR}/${NORMALSAMPLEG}.bwa.final.bam ; else rsync ${STARTDIR}/${PATIENT_NAME}/${NASSAY}/${NORMALSAMPLEG}/${NORMALSAMPLEG}.bwa.final.bam /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/delly/${GENOMEPAIR}/  ; fi "
+	ssh ${USER}@${DATAMOVER} " if [ -d \"\` ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \`\" ] ; then LNDIR=\`ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1\` ; ln -s \${LNDIR}/${NASSAY}/${NORMALSAMPLEG}/${NORMALSAMPLEG}.bwa.final.bam /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/delly/${GENOMEPAIR}/${NORMALSAMPLEG}.bwa.final.bam ; else rsync ${STARTDIR}/${PATIENT_NAME}/${NASSAY}/${NORMALSAMPLEG}/${NORMALSAMPLEG}.bwa.final.bam /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/delly/${GENOMEPAIR}/  ; fi "
 
 	if [ $? -ne 0 ]
 	then
@@ -464,7 +464,7 @@ then
 	        exit 1
 	fi
 
-	ssh ${USER}@dback-data1.tgen.org " if [ -d \"\` ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \`\" ] ; then LNDIR=\`ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1\` ; ln -s \${LNDIR}/${NASSAY}/${NORMALSAMPLEG}/${NORMALSAMPLEG}.bwa.final.bai /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/delly/${GENOMEPAIR}/${NORMALSAMPLEG}.bwa.final.bai ; else rsync ${STARTDIR}/${PATIENT_NAME}/${NASSAY}/${NORMALSAMPLEG}/${NORMALSAMPLEG}.bwa.final.bai /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/delly/${GENOMEPAIR}/ ; fi   "
+	ssh ${USER}@${DATAMOVER} " if [ -d \"\` ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \`\" ] ; then LNDIR=\`ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1\` ; ln -s \${LNDIR}/${NASSAY}/${NORMALSAMPLEG}/${NORMALSAMPLEG}.bwa.final.bai /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/delly/${GENOMEPAIR}/${NORMALSAMPLEG}.bwa.final.bai ; else rsync ${STARTDIR}/${PATIENT_NAME}/${NASSAY}/${NORMALSAMPLEG}/${NORMALSAMPLEG}.bwa.final.bai /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/delly/${GENOMEPAIR}/ ; fi   "
 
 	if [ $? -ne 0 ]
 	then
@@ -478,7 +478,7 @@ then
 
 	# Start Delly PBS
 
-	ssh ${USER}@dback-login1.tgen.org "source /etc/profile ; cd ${DIR} ; sbatch -n 1 -N 1 --mem-per-cpu 3000 --cpus-per-task 8 --output ${HOME}/STD_OUT/%x_${GENOMEPAIR}_%j.out --export BASEDIR=${BASEDIR},JOBSDIR=${JOBSDIR},DIR=${DIR},STARTDIR="${STARTDIR}",GENOMEPAIR="${GENOMEPAIR}",PATIENT_NAME="${PATIENT_NAME}",TUMORSAMPLEG="${TUMORSAMPLEG}",NORMALSAMPLEG="${NORMALSAMPLEG}",EXPECTEDPAIRS=${EXPECTEDPAIRS} ${JOBSDIR}/delly.pbs " 
+	ssh ${USER}@dback-login1.tgen.org "source /etc/profile ; cd ${DIR} ; sbatch -n 1 -N 1 --mem-per-cpu 3000 --cpus-per-task 8 --output ${HOME}/STD_OUT/%x_${GENOMEPAIR}_%j.out --export DATAMOVERIP=${DATAMOVERIP},DATAMOVER=${DATAMOVER},BASEDIR=${BASEDIR},JOBSDIR=${JOBSDIR},DIR=${DIR},STARTDIR="${STARTDIR}",GENOMEPAIR="${GENOMEPAIR}",PATIENT_NAME="${PATIENT_NAME}",TUMORSAMPLEG="${TUMORSAMPLEG}",NORMALSAMPLEG="${NORMALSAMPLEG}",EXPECTEDPAIRS=${EXPECTEDPAIRS} ${JOBSDIR}/delly.pbs " 
 
 	if [ $? -ne 0 ]
 	then

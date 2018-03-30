@@ -136,7 +136,7 @@ if [ $FAILED = 0 ]
 then
 	for extToCopy in fusionValidator.Digar.collapsed.all.final.txt fusionValidator.GermlineOnly.txt Digar.allTrinity.fasta Digar.allTrinity.bam Digar.allTrinity.bai Digar.final.txt 
 	do
-		ssh ${USER}@10.48.73.18 "rsync ${DIR_WORK}/${RNASAMPLEID}.${extToCopy} ${STARTDIR}/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/ "
+		ssh ${USER}@${DATAMOVERIP} "rsync ${DIR_WORK}/${RNASAMPLEID}.${extToCopy} ${STARTDIR}/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/ "
 		if [ $? -ne 0 ]
 		then
 			fails=1
@@ -145,7 +145,7 @@ then
 
 	if [ $fails -eq 0 ]
 	then
-		ssh ${USER}@10.48.73.18 "rm ${STARTDIR}/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/FusionValidator_In_Progress ; \
+		ssh ${USER}@${DATAMOVERIP} "rm ${STARTDIR}/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/FusionValidator_In_Progress ; \
 			touch ${STARTDIR}/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/FusionValidator_Complete ; \
 			cd ${STARTDIR}/${PATIENT_NAME}/bams
 			ln -s ../fusionValidator/${RNASAMPLEID}/${RNASAMPLEID}.Digar.allTrinity.bam ${RNASAMPLEID}.Digar.allTrinity.bam
@@ -167,7 +167,7 @@ then
 		rm -rf /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}
 
 	else
-		ssh ${USER}@10.48.73.18 "rm ${STARTDIR}/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/FusionValidator_In_Progress ; \
+		ssh ${USER}@${DATAMOVERIP} "rm ${STARTDIR}/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/FusionValidator_In_Progress ; \
 			rm ${STARTDIR}/${PATIENT_NAME}/FusionValidator_In_Progress ; \
 			touch ${STARTDIR}/${PATIENT_NAME}/FusionValidator_Fail ; \
 			echo fusionValidator pbs script failed for ${RNASAMPLEID} >> ${STARTDIR}/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/FusionValidator_Fail ; \
@@ -177,7 +177,7 @@ then
 	fi
 
 else
-	ssh ${USER}@10.48.73.18 "rm ${STARTDIR}/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/FusionValidator_In_Progress ; \
+	ssh ${USER}@${DATAMOVERIP} "rm ${STARTDIR}/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/FusionValidator_In_Progress ; \
 		rm ${STARTDIR}/${PATIENT_NAME}/FusionValidator_In_Progress ; \
 		touch ${STARTDIR}/${PATIENT_NAME}/FusionValidator_Fail ; \
 		echo fusionValidator pbs script failed for ${RNASAMPLEID} >> ${STARTDIR}/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/FusionValidator_Fail ; \

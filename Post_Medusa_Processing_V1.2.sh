@@ -31,6 +31,8 @@
 ##	-l	IN-Development: -l <file_of_directory_names.txt> Uses a list of directories to operate on.
 ##					 Depending on the other options you use [-p|-r|-R] this could have unintended
 ##					 side effects.
+##	-d	Number [1|2|3] Select which data mover to use for rsyncing files to dback. Default is 3.
+##	-D	Number [123|12|23|13] Cycle the data mover used after each patient.
 ##	-c	Used with the -R and -l option to only restart Copy Number analysis. 
 ##	-m	Used with the -R and -l option to only restart vcfMerger using the pegasus pipe protocol.
 ##	-t	Used with the -R and -l option to only restart TopHat Fusion.
@@ -59,9 +61,11 @@ CNAONLY=0
 MERGERONLY=0
 TOPHATONLY=0
 FUSIONONLY=0
+DATAMOVER=dback-data3.tgen.org
+DATAMOVERIP=10.48.73.18
 
 
-while getopts ":rRb:l:pcmtf" opt
+while getopts ":rRb:l:pcmtd:D:f" opt
 do
 	case $opt in
 		r)
@@ -101,6 +105,37 @@ do
 			MERGERONLY=1 ;;
 		t)
 			TOPHATONLY=1 ;;
+		d)
+			DATAMOVER=$OPTARG
+			if [ ${DATAMOVER} == "1" ] || [ ${DATAMOVER} == "2" ] || [ ${DATAMOVER} == "3" ] 
+			then
+				if [ ${DATAMOVER} == "1" ]
+				then
+					DATAMOVERIP=10.48.73.16
+				elif [ ${DATAMOVER} == "2" ]
+				then
+					DATAMOVERIP=10.48.73.17
+				elif [ ${DATAMOVER} == "3" ]
+				then
+					DATAMOVERIP=10.48.73.18
+				fi
+				DATAMOVER=dback-data${DATAMOVER}.tgen.org
+			else
+				echo "${DATAMOVER} is not a valid data mover."
+				echo "Please use one of the following [ 1/2/3 ]"
+				exit 1
+			fi ;;
+		D)
+			CYCLEDATAMOVER=$OPTARG
+			CYCLEDM="Yes"
+			if [ ${CYCLEDATAMOVER} == "123" ] || [ ${CYCLEDATAMOVER} == "12" ] || [ ${CYCLEDATAMOVER} == "23" ] || [ ${CYCLEDATAMOVER} == "13" ]
+			then
+				DMCOUNT=`echo $CYCLEDATAMOVER | wc -c | awk '{ print $1 - 1 }'`
+			else
+				echo "${CYCLEDATAMOVER} is not a valid cycle strategy for the data movers."
+				echo "Please use one of the following [ 123/12/23/13 ]"
+				exit 1
+			fi
 		f)
 			FUSIONONLY=1 ;;
 		l)
@@ -136,7 +171,7 @@ then
 	exit 1
 fi
 
-#}}}  
+#}}}   
 
 # Post Processing Variables
 
@@ -149,6 +184,19 @@ GENOMEPBS=${BASEDIR}/jobScripts/rsync_Genome_Files.pbs
 RNAPBS=${BASEDIR}/jobScripts/rsync_RNA_Files.pbs
 CONSTANTS=${BASEDIR}/constants.txt
 STARTDIR=`pwd`
+
+#set Data mover cycles if used
+
+if [ ${CYCLEDM} == "Yes" ]
+then
+	if [ ${DMCOUNT} == "3" ]
+	then
+		DATAMOVERNUMBER=3
+	else
+		DATAMOVERNUMBER=2
+	fi
+fi
+
 
 #}}}
 
@@ -200,13 +248,71 @@ do
 
 	#}}}	
 
+	# Set datamover to use if cycling
+
+	#{{{
+	if [ ${CYCLEDM} == "Yes" ]
+	then
+		if [ ${DMCOUNT} == 3 ]
+		then
+			if [ ${DATAMOVERNUMBER} == "3" ]
+			then
+				DATAMOVERNUMBER=1
+				DATAMOVER=dback-data${DATAMOVERNUMBER}.tgen.org
+				DATAMOVERIP=10.48.73.16
+			else
+				DATAMOVERNUMBER=`echo $DATAMOVERNUMBER | awk '{ print $1 + 1 }'`
+				DATAMOVERNUMBER2=`echo $CYCLEDATAMOVER | cut -c$DATAMOVERNUMBER`
+				if [ $DATAMOVERNUMBER2 == "2" ]
+				then
+					DATAMOVER=dback-data${DATAMOVERNUMBER2}.tgen.org
+					DATAMOVERIP=10.48.73.17
+				else
+					DATAMOVER=dback-data${DATAMOVERNUMBER2}.tgen.org
+					DATAMOVERIP=10.48.73.18
+				fi
+				
+			fi
+		else
+			if [ ${DATAMOVERNUMBER} == "2" ]
+			then
+				DATAMOVERNUMBER=1
+				DATAMOVERNUMBER2=`echo $CYCLEDATAMOVER | cut -c$DATAMOVERNUMBER`
+				if [ $DATAMOVERNUMBER2 == "1" ]
+				then
+					DATAMOVER=dback-data${DATAMOVERNUMBER2}.tgen.org
+					DATAMOVERIP=10.48.73.16
+				elif [ $DATAMOVERNUMBER2 == "2" ]
+				then
+					DATAMOVER=dback-data${DATAMOVERNUMBER2}.tgen.org
+					DATAMOVERIP=10.48.73.17
+				fi
+		
+			else
+				DATAMOVERNUMBER=2
+				DATAMOVERNUMBER2=`echo $CYCLEDATAMOVER | cut -c$DATAMOVERNUMBER`
+				if [ $DATAMOVERNUMBER2 == "2" ]
+				then
+					DATAMOVER=dback-data${DATAMOVERNUMBER2}.tgen.org
+					DATAMOVERIP=10.48.73.17
+				elif [ $DATAMOVERNUMBER2 == "3" ]
+				then
+					DATAMOVER=dback-data${DATAMOVERNUMBER2}.tgen.org
+					DATAMOVERIP=10.48.73.18
+				fi
+			fi
+		fi
+	fi
+	#}}}
+
+
 	# Remove Post processing directory on /scratch if performing -R or -p
 
 	#{{{
 
 	if [ ${RESTART} == 1 ] || [ ${POSTPROCESSING} == 1 ]
 	then
-		ssh ${USER}@dback-data1.tgen.org "if [ -d /scratch/${USER}/post_medusa_processing/${PATIENT_NAME} ] ; then rm -rf /scratch/${USER}/post_medusa_processing/${PATIENT_NAME} ; fi"
+		ssh ${USER}@${DATAMOVER} "if [ -d /scratch/${USER}/post_medusa_processing/${PATIENT_NAME} ] ; then rm -rf /scratch/${USER}/post_medusa_processing/${PATIENT_NAME} ; fi"
 		if [ $? -ne 0 ]
 		then
 			echo
@@ -218,7 +324,7 @@ do
 	
 			if [ ${RESPONSE} == "auto" ]
 			then
-				ssh ${USER}@dback-data1.tgen.org "if [ -d /scratch/${USER}/post_medusa_processing/${PATIENT_NAME} ] ; then rm -rf /scratch/${USER}/post_medusa_processing/${PATIENT_NAME} ; fi"
+				ssh ${USER}@${DATAMOVER} "if [ -d /scratch/${USER}/post_medusa_processing/${PATIENT_NAME} ] ; then rm -rf /scratch/${USER}/post_medusa_processing/${PATIENT_NAME} ; fi"
 	
 				if [ $? -ne 0 ]
 				then
@@ -663,7 +769,7 @@ do
 						touch vcfMerger_pegasus/${EXOMEPAIR}/SnpEFF_ANN_In_Progress
 					fi
 
-					qsub -v BASEDIR="${BASEDIR}",RNAFLAG="${RNAFLAG}",RNASAMPLE="${RNASAMPLE}",RNAASSAY="${RNAASSAY}",CNAONLY="${CNAONLY}",MERGERONLY="${MERGERONLY}",BEDFILE=${bedFile},PBSNAME="${EXOMEPAIR}",STARTDIR="${STARTDIR}",CNAEXOMETARGET="${CNAEXOMETARGET}",NASSAY="${NASSAY}",TASSAY="${TASSAY}",LIBTYPE="${LIBTYPE}",USER="${USER}",PATIENT_NAME="${PATIENT_NAME}",NORMALSAMPLE="${NORMALSAMPLE}",TUMORSAMPLE="${TUMORSAMPLE}",VCF="${VCF}",NORMALDAT="${NORMALDAT}",TUMORDAT="${TUMORDAT}",EXOMEPAIR="${EXOMEPAIR}",EXOMEPAIRS=${EXOMEPAIRSLIST},EXPECTEDPAIRS=${EXPECTEDPAIRSLIST} ${EXOMEPBS}
+					qsub -v DATAMOVERIP=${DATAMOVERIP},DATAMOVER=${DATAMOVER},BASEDIR="${BASEDIR}",RNAFLAG="${RNAFLAG}",RNASAMPLE="${RNASAMPLE}",RNAASSAY="${RNAASSAY}",CNAONLY="${CNAONLY}",MERGERONLY="${MERGERONLY}",BEDFILE=${bedFile},PBSNAME="${EXOMEPAIR}",STARTDIR="${STARTDIR}",CNAEXOMETARGET="${CNAEXOMETARGET}",NASSAY="${NASSAY}",TASSAY="${TASSAY}",LIBTYPE="${LIBTYPE}",USER="${USER}",PATIENT_NAME="${PATIENT_NAME}",NORMALSAMPLE="${NORMALSAMPLE}",TUMORSAMPLE="${TUMORSAMPLE}",VCF="${VCF}",NORMALDAT="${NORMALDAT}",TUMORDAT="${TUMORDAT}",EXOMEPAIR="${EXOMEPAIR}",EXOMEPAIRS=${EXOMEPAIRSLIST},EXPECTEDPAIRS=${EXPECTEDPAIRSLIST} ${EXOMEPBS}
 
 					if [ $? -ne 0 ]
 					then
@@ -728,7 +834,7 @@ do
 							mkdir cna_manual_2016/${GENOMEPAIR}_unfi
 							touch cna_manual_2016/${GENOMEPAIR}_unfi/CNA_Manual_In_Progress
 	
-							qsub -v BASEDIR="${BASEDIR}",PBSNAME=${GENOMEPAIR},DELLY=${DELLY},BEDFILE=${bedFile},STARTDIR="${STARTDIR}",GENOMEPAIR=${GENOMEPAIR},EXOMEPAIR=${EXOMEPAIR},NORMALSAMPLEG="${NORMALSAMPLEG}",TUMORSAMPLEG="${TUMORSAMPLEG}",NASSAY="${NASSAY}",TASSAY="${TASSAY}",LIBTYPE="${LIBTYPE}",PATIENT_NAME="${PATIENT_NAME}",NORMALSAMPLE="${NORMALSAMPLE}",TUMORSAMPLE="${TUMORSAMPLE}",VCF="${VCF}",NORMALDAT="${NORMALDAT}",TUMORDAT="${TUMORDAT}",EXPECTEDPAIRS=${EXPECTEDPAIRSLIST} ${GENOMEPBS}
+							qsub -v DATAMOVERIP=${DATAMOVERIP},DATAMOVER=${DATAMOVER},BASEDIR="${BASEDIR}",PBSNAME=${GENOMEPAIR},DELLY=${DELLY},BEDFILE=${bedFile},STARTDIR="${STARTDIR}",GENOMEPAIR=${GENOMEPAIR},EXOMEPAIR=${EXOMEPAIR},NORMALSAMPLEG="${NORMALSAMPLEG}",TUMORSAMPLEG="${TUMORSAMPLEG}",NASSAY="${NASSAY}",TASSAY="${TASSAY}",LIBTYPE="${LIBTYPE}",PATIENT_NAME="${PATIENT_NAME}",NORMALSAMPLE="${NORMALSAMPLE}",TUMORSAMPLE="${TUMORSAMPLE}",VCF="${VCF}",NORMALDAT="${NORMALDAT}",TUMORDAT="${TUMORDAT}",EXPECTEDPAIRS=${EXPECTEDPAIRSLIST} ${GENOMEPBS}
 
 							if [ $? -ne 0 ]
 							then
@@ -802,7 +908,7 @@ do
 						mkdir delly/${GENOMEPAIR}
 						touch delly/${GENOMEPAIR}/Delly_In_Progress
 						
-						qsub -v BASEDIR="${BASEDIR}",PBSNAME=${GENOMEPAIR},DELLY=${DELLY},STARTDIR="${STARTDIR}",NASSAY="${NASSAY}",TASSAY="${TASSAY}",GENOMEPAIR=${GENOMEPAIR},NORMALSAMPLEG="${NORMALSAMPLEG}",TUMORSAMPLEG="${TUMORSAMPLEG}",PATIENT_NAME="${PATIENT_NAME}",EXPECTEDPAIRS=${EXPECTEDPAIRSLIST} ${GENOMEPBS}
+						qsub -v DATAMOVERIP=${DATAMOVERIP},DATAMOVER=${DATAMOVER},BASEDIR="${BASEDIR}",PBSNAME=${GENOMEPAIR},DELLY=${DELLY},STARTDIR="${STARTDIR}",NASSAY="${NASSAY}",TASSAY="${TASSAY}",GENOMEPAIR=${GENOMEPAIR},NORMALSAMPLEG="${NORMALSAMPLEG}",TUMORSAMPLEG="${TUMORSAMPLEG}",PATIENT_NAME="${PATIENT_NAME}",EXPECTEDPAIRS=${EXPECTEDPAIRSLIST} ${GENOMEPBS}
 
 						if [ $? -ne 0 ]
 						then
@@ -966,7 +1072,7 @@ do
 					FASTQDIR="`grep "${STUDY}_STUDY=" ${CONSTANTS} | cut -d= -f2 | tr -d '\n'`"
 					RNATYPE="`grep "${ASSAY}_SALMONlibType=" ${CONSTANTS} | cut -d= -f2 | tr -d '\n'`"
 	
-					qsub -v NASSAY=${NASSAY},TASSAY=${TASSAY},TUMORSAMPLEG=${TUMORSAMPLEG},NORMALSAMPLEG=${NORMALSAMPLEG},FUSIONONLY="${FUSIONONLY}",TOPHATONLY="${TOPHATONLY}",BASEDIR="${BASEDIR}",PBSNAME=${RNASAMPLEID},STARTDIR="${STARTDIR}",RNATYPE="${RNATYPE}",USER="${USER}",ASSAY="${ASSAY}",FASTQDIR="${FASTQDIR}",RNASAMPLEID="${RNASAMPLEID}",PATIENT_NAME="${PATIENT_NAME}",LIBTYPE="${LIBTYPE}",RNACHECK=${RNACHECKLIST},RNACHECK2=${RNACHECKLIST2} ${RNAPBS}
+					qsub -v DATAMOVERIP=${DATAMOVERIP},DATAMOVER=${DATAMOVER},NASSAY=${NASSAY},TASSAY=${TASSAY},TUMORSAMPLEG=${TUMORSAMPLEG},NORMALSAMPLEG=${NORMALSAMPLEG},FUSIONONLY="${FUSIONONLY}",TOPHATONLY="${TOPHATONLY}",BASEDIR="${BASEDIR}",PBSNAME=${RNASAMPLEID},STARTDIR="${STARTDIR}",RNATYPE="${RNATYPE}",USER="${USER}",ASSAY="${ASSAY}",FASTQDIR="${FASTQDIR}",RNASAMPLEID="${RNASAMPLEID}",PATIENT_NAME="${PATIENT_NAME}",LIBTYPE="${LIBTYPE}",RNACHECK=${RNACHECKLIST},RNACHECK2=${RNACHECKLIST2} ${RNAPBS}
 
 					STATUS=$?
 

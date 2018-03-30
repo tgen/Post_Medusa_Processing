@@ -18,7 +18,7 @@ JOBSDIR=${BASEDIR}/jobScripts
 if [ ${CNAONLY} = 0 ]
 then
 	# Make Directories and progress file for snpEFF
-	ssh ${USER}@dback-data1.tgen.org "mkdir -p /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/vcfMerger_pegasus/${EXOMEPAIR} "
+	ssh ${USER}@${DATAMOVER} "mkdir -p /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/vcfMerger_pegasus/${EXOMEPAIR} "
 
 	if [ $? -ne 0 ]
 	then
@@ -40,7 +40,7 @@ fi
 
 if [ ${MERGERONLY} == 0 ]
 then
-	ssh ${USER}@dback-data1.tgen.org "mkdir -p /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${EXOMEPAIR}_exo"
+	ssh ${USER}@${DATAMOVER} "mkdir -p /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${EXOMEPAIR}_exo"
 
 	if [ $? -ne 0 ]
 	then
@@ -69,7 +69,7 @@ fi
 if [ ${CNAONLY} = 0 ]
 then
 	# Seurat vcf
-	ssh ${USER}@dback-data1.tgen.org "rsync ${STARTDIR}/${PATIENT_NAME}/seurat/${EXOMEPAIR}/${EXOMEPAIR}.seurat.vcf /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/vcfMerger_pegasus/${EXOMEPAIR}/ "
+	ssh ${USER}@${DATAMOVER} "rsync ${STARTDIR}/${PATIENT_NAME}/seurat/${EXOMEPAIR}/${EXOMEPAIR}.seurat.vcf /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/vcfMerger_pegasus/${EXOMEPAIR}/ "
 
 	if [ $? -ne 0 ]
 	then
@@ -90,7 +90,7 @@ then
 
 	# Mutect vcf
 
-	ssh ${USER}@dback-data1.tgen.org "rsync ${STARTDIR}/${PATIENT_NAME}/mutect/${EXOMEPAIR}/${EXOMEPAIR}_MuTect_All.vcf /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/vcfMerger_pegasus/${EXOMEPAIR}/ "
+	ssh ${USER}@${DATAMOVER} "rsync ${STARTDIR}/${PATIENT_NAME}/mutect/${EXOMEPAIR}/${EXOMEPAIR}_MuTect_All.vcf /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/vcfMerger_pegasus/${EXOMEPAIR}/ "
 
 	if [ $? -ne 0 ] 
 	then
@@ -111,7 +111,7 @@ then
 
 	# strelka SNV vcf
 
-        ssh ${USER}@dback-data1.tgen.org "rsync ${STARTDIR}/${PATIENT_NAME}/strelka/${EXOMEPAIR}/myAnalysis/results/${EXOMEPAIR}.strelka.passed.somatic.snvs.vcf /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/vcfMerger_pegasus/${EXOMEPAIR}/ "
+        ssh ${USER}@${DATAMOVER} "rsync ${STARTDIR}/${PATIENT_NAME}/strelka/${EXOMEPAIR}/myAnalysis/results/${EXOMEPAIR}.strelka.passed.somatic.snvs.vcf /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/vcfMerger_pegasus/${EXOMEPAIR}/ "
 
         if [ $? -ne 0 ] 
         then
@@ -132,7 +132,7 @@ then
 
 	# strelka INDEL vcf
 
-        ssh ${USER}@dback-data1.tgen.org "rsync ${STARTDIR}/${PATIENT_NAME}/strelka/${EXOMEPAIR}/myAnalysis/results/${EXOMEPAIR}.strelka.passed.somatic.indels.vcf /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/vcfMerger_pegasus/${EXOMEPAIR}/ "
+        ssh ${USER}@${DATAMOVER} "rsync ${STARTDIR}/${PATIENT_NAME}/strelka/${EXOMEPAIR}/myAnalysis/results/${EXOMEPAIR}.strelka.passed.somatic.indels.vcf /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/vcfMerger_pegasus/${EXOMEPAIR}/ "
 
         if [ $? -ne 0 ] 
         then
@@ -154,7 +154,7 @@ then
 	if [ ${RNAFLAG} == "YES" ]
 	then
 		# Switch this once the first round is finished
-		ssh ${USER}@dback-data1.tgen.org " if [ -d \"\` ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \`\" ] ; then LNDIR=\`ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \` ; ln -s \${LNDIR}/${RNAASSAY}/${RNASAMPLE}/${RNASAMPLE}.starDir/${RNASAMPLE}.starAligned.final.bam /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/vcfMerger_pegasus/${EXOMEPAIR}/${RNASAMPLE}.starAligned.final.bam ; ln -s \${LNDIR}/${RNAASSAY}/${RNASAMPLE}/${RNASAMPLE}.starDir/${RNASAMPLE}.starAligned.final.bai /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/vcfMerger_pegasus/${EXOMEPAIR}/${RNASAMPLE}.starAligned.final.bai ; else rsync ${STARTDIR}/${PATIENT_NAME}/${RNAASSAY}/${RNASAMPLE}/${RNASAMPLE}.starDir/${RNASAMPLE}.starAligned.final.bam /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/vcfMerger_pegasus/${EXOMEPAIR}/ ; rsync ${STARTDIR}/${PATIENT_NAME}/${RNAASSAY}/${RNASAMPLE}/${RNASAMPLE}.starDir/${RNASAMPLE}.starAligned.final.bai /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/vcfMerger_pegasus/${EXOMEPAIR}/ ; fi "
+		ssh ${USER}@${DATAMOVER} " if [ -d \"\` ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \`\" ] ; then LNDIR=\`ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \` ; ln -s \${LNDIR}/${RNAASSAY}/${RNASAMPLE}/${RNASAMPLE}.starDir/${RNASAMPLE}.starAligned.final.bam /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/vcfMerger_pegasus/${EXOMEPAIR}/${RNASAMPLE}.starAligned.final.bam ; ln -s \${LNDIR}/${RNAASSAY}/${RNASAMPLE}/${RNASAMPLE}.starDir/${RNASAMPLE}.starAligned.final.bai /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/vcfMerger_pegasus/${EXOMEPAIR}/${RNASAMPLE}.starAligned.final.bai ; else rsync ${STARTDIR}/${PATIENT_NAME}/${RNAASSAY}/${RNASAMPLE}/${RNASAMPLE}.starDir/${RNASAMPLE}.starAligned.final.bam /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/vcfMerger_pegasus/${EXOMEPAIR}/ ; rsync ${STARTDIR}/${PATIENT_NAME}/${RNAASSAY}/${RNASAMPLE}/${RNASAMPLE}.starDir/${RNASAMPLE}.starAligned.final.bai /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/vcfMerger_pegasus/${EXOMEPAIR}/ ; fi "
 
 
 		#ssh ${USER}@dback-data1.tgen.org " ln -s /scratch/MMRF/RNA_Star_aligned_bams/${RNASAMPLE}.starAligned.final.bam /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/vcfMerger_pegasus/${EXOMEPAIR}/${RNASAMPLE}.starAligned.final.bam ; ln -s /scratch/MMRF/RNA_Star_aligned_bams/${RNASAMPLE}.starAligned.final.bai /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/vcfMerger_pegasus/${EXOMEPAIR}/${RNASAMPLE}.starAligned.final.bai "		
@@ -189,7 +189,7 @@ if [ ${MERGERONLY} == 0 ]
 then
 	# Normal Dat
 
-	ssh ${USER}@dback-data1.tgen.org "rsync ${STARTDIR}/${PATIENT_NAME}/${NASSAY}/${NORMALSAMPLE}/${NORMALDAT} /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${EXOMEPAIR}_exo/ "
+	ssh ${USER}@${DATAMOVER} "rsync ${STARTDIR}/${PATIENT_NAME}/${NASSAY}/${NORMALSAMPLE}/${NORMALDAT} /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${EXOMEPAIR}_exo/ "
 
 	if [ $? -ne 0 ]
 	then
@@ -206,7 +206,7 @@ then
 	fi
 
 	# Tumor Dat
-	ssh ${USER}@dback-data1.tgen.org "rsync ${STARTDIR}/${PATIENT_NAME}/${TASSAY}/${TUMORSAMPLE}/${TUMORDAT} /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${EXOMEPAIR}_exo/ "
+	ssh ${USER}@${DATAMOVER} "rsync ${STARTDIR}/${PATIENT_NAME}/${TASSAY}/${TUMORSAMPLE}/${TUMORDAT} /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${EXOMEPAIR}_exo/ "
 
 	if [ $? -ne 0 ]
 	then
@@ -223,7 +223,7 @@ then
 	fi
 
 	# Normal HS Metrics
-	ssh ${USER}@dback-data1.tgen.org "rsync ${STARTDIR}/${PATIENT_NAME}/stats/${NORMALSAMPLE}.proj.md.jr.bam.picHSMetrics /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${EXOMEPAIR}_exo/ "
+	ssh ${USER}@${DATAMOVER} "rsync ${STARTDIR}/${PATIENT_NAME}/stats/${NORMALSAMPLE}.proj.md.jr.bam.picHSMetrics /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${EXOMEPAIR}_exo/ "
 	if [ $? -ne 0 ]
 	then
 		rm CNA_Manual_In_Progress
@@ -239,7 +239,7 @@ then
 	fi
 
 	# Tumor HS Metrics
-	ssh ${USER}@dback-data1.tgen.org "rsync ${STARTDIR}/${PATIENT_NAME}/stats/${TUMORSAMPLE}.proj.md.jr.bam.picHSMetrics /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${EXOMEPAIR}_exo/ "
+	ssh ${USER}@${DATAMOVER} "rsync ${STARTDIR}/${PATIENT_NAME}/stats/${TUMORSAMPLE}.proj.md.jr.bam.picHSMetrics /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${EXOMEPAIR}_exo/ "
 	if [ $? -ne 0 ]
 	then
 		rm CNA_Manual_In_Progress
@@ -255,7 +255,7 @@ then
 	fi
 
 	# Exome HC VCF
-	ssh ${USER}@dback-data1.tgen.org "rsync ${STARTDIR}/${PATIENT_NAME}/hc/${EXOMEPAIR}/${EXOMEPAIR}.HC_All.snpEff.vcf /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${EXOMEPAIR}_exo/ "
+	ssh ${USER}@${DATAMOVER} "rsync ${STARTDIR}/${PATIENT_NAME}/hc/${EXOMEPAIR}/${EXOMEPAIR}.HC_All.snpEff.vcf /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${EXOMEPAIR}_exo/ "
         
 	if [ $? -ne 0 ]
 	then
@@ -282,7 +282,7 @@ if [ ${CNAONLY} = 0 ]
 then
 	DIR=/scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/vcfMerger_pegasus/${EXOMEPAIR}
 
-	ssh ${USER}@dback-login1.tgen.org "source /etc/profile ; cd ${DIR} ; sbatch -n 1 -N 1 --mem-per-cpu 3000 --cpus-per-task 8 --output ${HOME}/STD_OUT/%x_${TUMORSAMPLE}_%j.out --export BASEDIR=${BASEDIR},JOBSDIR=${JOBSDIR},RNAFLAG="${RNAFLAG}",RNASAMPLE="${RNASAMPLE}",BEDFILE=${BEDFILE},RNAASSAY="${RNAASSAY}",DIR=${DIR},STARTDIR="${STARTDIR}",EXOMEPAIR=${EXOMEPAIR},PATIENT_NAME="${PATIENT_NAME}",TUMOR="${TUMORSAMPLE}",CONTROL="${NORMALSAMPLE}",EXOMEPAIRS=${EXOMEPAIRS} ${JOBSDIR}/vcfMerger.pbs "
+	ssh ${USER}@dback-login1.tgen.org "source /etc/profile ; cd ${DIR} ; sbatch -n 1 -N 1 --mem-per-cpu 3000 --cpus-per-task 8 --output ${HOME}/STD_OUT/%x_${TUMORSAMPLE}_%j.out --export DATAMOVERIP=${DATAMOVERIP},DATAMOVER=${DATAMOVER},BASEDIR=${BASEDIR},JOBSDIR=${JOBSDIR},RNAFLAG="${RNAFLAG}",RNASAMPLE="${RNASAMPLE}",BEDFILE=${BEDFILE},RNAASSAY="${RNAASSAY}",DIR=${DIR},STARTDIR="${STARTDIR}",EXOMEPAIR=${EXOMEPAIR},PATIENT_NAME="${PATIENT_NAME}",TUMOR="${TUMORSAMPLE}",CONTROL="${NORMALSAMPLE}",EXOMEPAIRS=${EXOMEPAIRS} ${JOBSDIR}/vcfMerger.pbs "
 
 	if [ $? -ne 0 ]
 	then
@@ -303,7 +303,7 @@ if [ ${MERGERONLY} == 0 ]
 then
 	DIR=/scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${EXOMEPAIR}_exo
 
-	ssh ${USER}@dback-login1.tgen.org "source /etc/profile ; cd ${DIR} ; sbatch -n 1 -N 1 --mem-per-cpu 3000 --cpus-per-task 4 --output ${HOME}/STD_OUT/%x_${EXOMEPAIR}_%j.out --export BASEDIR=${BASEDIR},JOBSDIR=${JOBSDIR},EXOMEPAIR=${EXOMEPAIR},BEDFILE=${BEDFILE},STARTDIR="${STARTDIR}",PATIENT_NAME="${PATIENT_NAME}",DIR=${DIR},NORMALSAMPLE=${NORMALSAMPLE},TUMORSAMPLE=${TUMORSAMPLE},CNAEXOMETARGET=${CNAEXOMETARGET},USER=${USER},VCF="${EXOMEPAIR}.HC_All.snpEff.vcf",NORMALDAT="${NORMALSAMPLE}.proj.md.jr.bam.clc.cln.dat",TUMORDAT="${TUMORSAMPLE}.proj.md.jr.bam.clc.cln.dat",OFILE=${EXOMEPAIR},EXPECTEDPAIRS=${EXPECTEDPAIRS} ${JOBSDIR}/ngs_cna2015_Exo_V3.pbs "
+	ssh ${USER}@dback-login1.tgen.org "source /etc/profile ; cd ${DIR} ; sbatch -n 1 -N 1 --mem-per-cpu 3000 --cpus-per-task 4 --output ${HOME}/STD_OUT/%x_${EXOMEPAIR}_%j.out --export DATAMOVERIP=${DATAMOVERIP},DATAMOVER=${DATAMOVER},BASEDIR=${BASEDIR},JOBSDIR=${JOBSDIR},EXOMEPAIR=${EXOMEPAIR},BEDFILE=${BEDFILE},STARTDIR="${STARTDIR}",PATIENT_NAME="${PATIENT_NAME}",DIR=${DIR},NORMALSAMPLE=${NORMALSAMPLE},TUMORSAMPLE=${TUMORSAMPLE},CNAEXOMETARGET=${CNAEXOMETARGET},USER=${USER},VCF="${EXOMEPAIR}.HC_All.snpEff.vcf",NORMALDAT="${NORMALSAMPLE}.proj.md.jr.bam.clc.cln.dat",TUMORDAT="${TUMORSAMPLE}.proj.md.jr.bam.clc.cln.dat",OFILE=${EXOMEPAIR},EXPECTEDPAIRS=${EXPECTEDPAIRS} ${JOBSDIR}/ngs_cna2015_Exo_V3.pbs "
 
 	if [ $? -ne 0 ]
 	then
