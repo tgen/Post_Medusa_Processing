@@ -1,5 +1,5 @@
 #!/bin/bash
-#PBS -l nodes=1:ppn=8
+#PBS -l nodes=1:ppn=4
 #PBS -N Post_Medusa_Processing
 #PBS -l walltime=24:00:00
 #PBS -j oe
