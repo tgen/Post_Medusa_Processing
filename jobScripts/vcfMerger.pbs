@@ -16,11 +16,9 @@ module load BEDTools/2.26.0
 
 # Does not exist. need to use newer version
 #module load R/3.1.1
-module load R/3.4.1
+module load R/3.2.2
 
 module load java/jdk-1.8.0_91
- 
-
 
 PATH=$PATH:/home/tgenref/binaries/vt/
 export PATH

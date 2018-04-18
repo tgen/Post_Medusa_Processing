@@ -63,7 +63,7 @@ TOPHATONLY=0
 FUSIONONLY=0
 DATAMOVER=dback-data3.tgen.org
 DATAMOVERIP=10.48.73.18
-
+CYCLEDM=No
 
 while getopts ":rRb:l:pcmtd:D:f" opt
 do
@@ -135,7 +135,7 @@ do
 				echo "${CYCLEDATAMOVER} is not a valid cycle strategy for the data movers."
 				echo "Please use one of the following [ 123/12/23/13 ]"
 				exit 1
-			fi
+			fi ;;
 		f)
 			FUSIONONLY=1 ;;
 		l)
@@ -253,7 +253,7 @@ do
 	#{{{
 	if [ ${CYCLEDM} == "Yes" ]
 	then
-		if [ ${DMCOUNT} == 3 ]
+		if [ ${DMCOUNT} == "3" ]
 		then
 			if [ ${DATAMOVERNUMBER} == "3" ]
 			then

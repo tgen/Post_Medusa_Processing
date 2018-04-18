@@ -457,7 +457,7 @@ then
 			echo Failed to rsync normal bai for fusionValidator for ${RNASAMPLEID} >> fusionValidator/${RNASAMPLEID}/FusionValidator_Fail
 	fi
 else
-	ssh ${USER}@dback-login1.tgen.org "source /etc/profile ; cd ${DIR2} ; sbatch -n 1 -N 1 --cpus-per-task 16 --dependency=${SALMONJOBID} --output ${HOME}/STD_OUT/%x_${RNASAMPLEID}_%j.out --export DATAMOVERIP=${DATAMOVERIP},DATAMOVER=${DATAMOVER},FUSIONONLY=${FUSIONONLY},DIR2=${DIR2},DIR=${DIR},BASEDIR=${BASEDIR},JOBSDIR=${JOBSDIR},SAMPLE=${RNASAMPLEID},STARTDIR="${STARTDIR}",RNATYPE="${RNATYPE}",ASSAY="${ASSAY}",RNASAMPLEID="${RNASAMPLEID}",LIBTYPE="${LIBTYPE}",PATIENT_NAME="${PATIENT_NAME}",RNACHECK2="${RNACHECK2}" ${JOBSDIR}/fusionValidator.pbs "
+	ssh ${USER}@dback-login1.tgen.org "source /etc/profile ; cd ${DIR2} ; sbatch -n 1 -N 1 --cpus-per-task 16 --dependency=${SALMONJOBID} --output ${HOME}/STD_OUT/%x_${RNASAMPLEID}_%j.out --export DATAMOVERIP=${DATAMOVERIP},DATAMOVER=${DATAMOVER},FUSIONONLY=${FUSIONONLY},DIR2=${DIR2},DIR=${DIR},TUMORSAMPLEG=${TUMORSAMPLEG},NORMALSAMPLEG=${NORMALSAMPLEG},BASEDIR=${BASEDIR},JOBSDIR=${JOBSDIR},SAMPLE=${RNASAMPLEID},STARTDIR="${STARTDIR}",RNATYPE="${RNATYPE}",ASSAY="${ASSAY}",RNASAMPLEID="${RNASAMPLEID}",LIBTYPE="${LIBTYPE}",PATIENT_NAME="${PATIENT_NAME}",RNACHECK2="${RNACHECK2}" ${JOBSDIR}/fusionValidator.pbs "
 	if [ $? -ne 0 ]
 	then
 			rm FusionValidator_In_Progress

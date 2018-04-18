@@ -48,6 +48,15 @@ GENDER_GRAPH_R=${JOBSDIR}/Gender_Graph.R
 
 FAILED=0
 
+# Possible fix for matlab runtime
+TD=`pwd`
+mkdir TempDir
+TMPDIR=${TD}/TempDir
+TMP=${TD}/TempDir
+TEMPDIR=${TD}/TempDir
+
+export MCR_CACHE_ROOT=${TD}/TempDir
+
 # Filter vcf to Targets
 
 cat ${VCF} | java -jar ${SNPSIFT} intervals ${BEDFILE} > ${VCF}.temp.vcf
