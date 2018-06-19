@@ -53,7 +53,7 @@ then
 
 	# link Salmon files
 	ln -s ${DIR}/${RNASAMPLEID}.salmonDir/ensembl74_GTF_V7.2/${RNASAMPLEID}_salmon_e74GTF_genes.sf ${RNASAMPLEID}_salmon_e74GTF_genes.sf
-	if [[ ! -f ${NORMALSAMPLEG}.bwa.final.bai ]]
+	if [[ ! -f ${RNASAMPLEID}_salmon_e74GTF_genes.sf ]]
 	then
 		FAILED=1
 	fi
