@@ -7,8 +7,6 @@
 
 cd $PBS_O_WORKDIR
 
-
-
 JOBSDIR=${BASEDIR}/jobScripts
 
 # Make needed directories for exome
@@ -188,8 +186,12 @@ fi
 if [ ${MERGERONLY} == 0 ]
 then
 	# Normal Dat
-
-	ssh ${USER}@${DATAMOVER} "rsync ${STARTDIR}/${PATIENT_NAME}/${NASSAY}/${NORMALSAMPLE}/${NORMALDAT} /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${EXOMEPAIR}_exo/ "
+	if [[ ${ISMATCH} == "no" ]]
+	then
+		ssh ${USER}@${DATAMOVER} "rsync ${CONTROLSDIR}${NASSAY}/${NORMALSAMPLE}/${NORMALDAT} /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${EXOMEPAIR}_exo/ "
+	else
+		ssh ${USER}@${DATAMOVER} "rsync ${STARTDIR}/${PATIENT_NAME}/${NASSAY}/${NORMALSAMPLE}/${NORMALDAT} /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${EXOMEPAIR}_exo/ "
+	fi
 
 	if [ $? -ne 0 ]
 	then
@@ -210,6 +212,7 @@ then
 
 	if [ $? -ne 0 ]
 	then
+
 		rm CNA_Manual_In_Progress
 	        rm SnpEFF_ANN_In_Progress
 	        rm vcfMerger_pegasus/${EXOMEPAIR}/SnpEFF_ANN_In_Progress
@@ -278,7 +281,7 @@ fi
 
 #{{{
 
-if [ ${CNAONLY} = 0 ]
+if [ ${CNAONLY} == 0 && ${ISMATCH} == "yes"  ]
 then
 	DIR=/scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/vcfMerger_pegasus/${EXOMEPAIR}
 

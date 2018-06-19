@@ -9,6 +9,15 @@ cd $PBS_O_WORKDIR
 
 JOBSDIR=${BASEDIR}/jobScripts
 
+# (!) This if statement is cell line specific. MUST CHECK FOR MATCHED NORMAL
+if [[ ${ISMATCH} == "no" ]]
+then
+     NORMBAMDIR=${CONTROLSDIR}${NASSAY}/${NORMALSAMPLEG}/${NORMALSAMPLEG}
+else
+     NORMBAMDIR=${STARTDIR}/${PATIENT_NAME}/${NASSAY}/${NORMALSAMPLEG}/${NORMALSAMPLEG}
+fi
+
+
 # Make Directories for Salmon, Kalliso, and Fusion Validator
 
 if [ ${TOPHATONLY} = 0 ] && [ ${FUSIONONLY} = 0 ]
@@ -353,7 +362,7 @@ then
 
 
 		# rsync Normal WGS BAM
-		ssh ${USER}@${DATAMOVER} " if [ -d \"\` ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \`\" ] ; then LNDIR=\`ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \` ; ln -s \${LNDIR}/${NASSAY}/${NORMALSAMPLEG}/${NORMALSAMPLEG}.bwa.final.bam /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/${NORMALSAMPLEG}.bwa.final.bam ; else rsync ${STARTDIR}/${PATIENT_NAME}/${NASSAY}/${NORMALSAMPLEG}/${NORMALSAMPLEG}.bwa.final.bam /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/  ; fi "
+		ssh ${USER}@${DATAMOVER} " if [ -d \"\` ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \`\" ] ; then LNDIR=\`ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \` ; ln -s \${LNDIR}/${NASSAY}/${NORMALSAMPLEG}/${NORMALSAMPLEG}.bwa.final.bam /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/${NORMALSAMPLEG}.bwa.final.bam ; else rsync ${NORMBAMDIR}.bwa.final.bam /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/  ; fi "
 		STATUS=$?
 
 		if [ "$STATUS" -ne "0" ]
@@ -365,7 +374,7 @@ then
 			exit 1
 		fi
 		
-		ssh ${USER}@${DATAMOVER} " if [ -d \"\` ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \`\" ] ; then LNDIR=\`ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \` ; ln -s \${LNDIR}/${NASSAY}/${NORMALSAMPLEG}/${NORMALSAMPLEG}.bwa.final.bai /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/${NORMALSAMPLEG}.bwa.final.bai ; else rsync ${STARTDIR}/${PATIENT_NAME}/${NASSAY}/${NORMALSAMPLEG}/${NORMALSAMPLEG}.bwa.final.bai /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/  ; fi "
+		ssh ${USER}@${DATAMOVER} " if [ -d \"\` ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \`\" ] ; then LNDIR=\`ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \` ; ln -s \${LNDIR}/${NASSAY}/${NORMALSAMPLEG}/${NORMALSAMPLEG}.bwa.final.bai /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/${NORMALSAMPLEG}.bwa.final.bai ; else rsync ${NORMBAMDIR}.bwa.final.bai /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/fusionValidator/${RNASAMPLEID}/  ; fi "
 		STATUS=$?
 
 		if [ "$STATUS" -ne "0" ]
