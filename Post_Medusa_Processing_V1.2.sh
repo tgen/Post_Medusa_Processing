@@ -580,37 +580,37 @@ do
 	then
 		cd ..		
 		if [ -d ${PATIENT_NAME} ]
-                then
-                        echo
-                        echo "---------------------------------"
-                        echo "Warning: ${PATIENT_NAME} already exists"
-                        echo
-                        DATE="`date +%Y%m%d-%H:%M`"
-                        echo "Adding time stamp to older folder"
-                        echo "Old folder name=${PATIENT_NAME}"
-                        echo "New folder name=${PATIENT_NAME}_TS${DATE}"
-                        mv ${PATIENT_NAME} ${PATIENT_NAME}_ts${DATE}
+		then
+			echo
+			echo "---------------------------------"
+			echo "Warning: ${PATIENT_NAME} already exists"
+			echo
+			DATE="`date +%Y%m%d-%H:%M`"
+			echo "Adding time stamp to older folder"
+			echo "Old folder name=${PATIENT_NAME}"
+			echo "New folder name=${PATIENT_NAME}_TS${DATE}"
+			mv ${PATIENT_NAME} ${PATIENT_NAME}_ts${DATE}
 
-                        #Rename files
-                        mv ${line} ${PATIENT_NAME}
+			#Rename files
+			mv ${line} ${PATIENT_NAME}
 
-                        #Message
-                        echo
-                        echo "---------------------------------"
-                        echo "RENAMING: ${line}"
-                        echo Old Name=${line}
-                        echo New Name=${PATIENT_NAME}
-                else
-                        #Rename files
-                        mv ${line} ${PATIENT_NAME}
+			#Message
+			echo
+			echo "---------------------------------"
+			echo "RENAMING: ${line}"
+			echo Old Name=${line}
+			echo New Name=${PATIENT_NAME}
+		else
+			#Rename files
+			mv ${line} ${PATIENT_NAME}
 
-                        #Message
-                        echo
-                        echo "---------------------------------"
-                        echo "RENAMING: ${line}"
-                        echo Old Name=${line}
-                        echo New Name=${PATIENT_NAME}
-                fi
+			#Message
+			echo
+			echo "---------------------------------"
+			echo "RENAMING: ${line}"
+			echo Old Name=${line}
+			echo New Name=${PATIENT_NAME}
+		fi
 		cd ${PATIENT_NAME}
 	fi
 
