@@ -60,7 +60,7 @@ then
 fi
 
 # Set Digar related variables 
-DIGAR=/home/achristofferson/Digar
+DIGAR=/home/tgenref/binaries/digar/Digar-1.1.1
 CONFIG=${DIGAR}/digar.cfg
 
 # Process files
@@ -108,7 +108,7 @@ fi
 
 export DIST_WIN=1500 # just make 1500 for LI
 export PILE_WIN=100 # make 100 for LI
-export GVALPATH=/home/achristofferson/genomicFusionValidator/ # script directory
+export GVALPATH=/home/tgenref/binaries/genomicFusionValidator/genomicFusionValidator-1.0/ # script directory
 export REFGENE_TABLE=/home/tgenref/homo_sapiens/grch37_hg19/hs37d5_tgen/gene_model/ensembl_v74/tool_specific_resources/tophat_fusion/refGene_Fusion_Validator.txt
 export ENSGENE_TABLE=/home/tgenref/homo_sapiens/grch37_hg19/hs37d5_tgen/gene_model/ensembl_v74/tool_specific_resources/tophat_fusion/ensGene_Fusion_Validator.txt
 export IMMUNOGLOBULIN_TABLE=/home/tgenref/homo_sapiens/grch37_hg19/hs37d5_tgen/gene_model/ensembl_v74/Homo_sapiens.GRCh37.74.gtf.hs37d5.immunoglobulinGenes.txt
