@@ -37,6 +37,7 @@
 ##	-m	Used with the -R and -l option to only restart vcfMerger using the pegasus pipe protocol.
 ##	-t	Used with the -R and -l option to only restart TopHat Fusion.
 ##	-f	Used with the -R and -l option to only restart digar/fusion validator
+##	-q	IN-Development: Takes as input the path to a study's FASTQ directory.
 ##
 ####################################################################
 ####################################################################
@@ -64,8 +65,9 @@ FUSIONONLY=0
 DATAMOVER=dback-data3.tgen.org
 DATAMOVERIP=10.48.73.18
 CYCLEDM=No
+SLOWQ=no
 
-while getopts ":rRb:l:pcmtd:D:f" opt
+while getopts ":rRb:l:pcmtd:D:fq:" opt
 do
 	case $opt in
 		r)
@@ -151,6 +153,34 @@ do
 					cat $DIRLIST
 					}
 			fi ;;
+		q)
+			FASTQPATHS=$OPTARG
+			FASTQPATHS=$(readlink -f ${FASTQPATHS})
+			if [[ -d $FASTQPATHS  ]]
+			then
+				SLOWQ=yes
+			elif [[ -f $FASTQPATHS ]]
+			then
+				fastq_line_count=`wc -l $FASTQPATHS | awk -F' ' '{print $1}'`
+				if [[ $fastq_line_count > 1 ]]
+				then
+					echo
+					echo ERROR : The current version of Post Medusa Processing does NOT support the handling of multiple FASTQ directories as an operand.
+					echo
+					exit 1
+				else
+					unset fastq_line_count
+					FASTQPATHS=$(cat $FASTQPATHS)
+					SLOWQ=yes
+				fi
+			else
+				echo
+				echo ERROR : $FASTQPATHS is neither a valid directory nor file.
+				echo Please check the path to your FASTQ directory.
+				echo
+				exit 1	
+			fi ;;
+				
 		:)
 			echo "Option -$OPTARG requires an argument." >&2
 			exit 1 ;;
@@ -179,6 +209,7 @@ fi
 
 BASEDIR=$(dirname $(readlink -f "$0"))
 
+CONTROLSDIR="/scratch/dpenaherrera/controls/"
 EXOMEPBS=${BASEDIR}/jobScripts/rsync_Exome_Files.pbs
 GENOMEPBS=${BASEDIR}/jobScripts/rsync_Genome_Files.pbs
 RNAPBS=${BASEDIR}/jobScripts/rsync_RNA_Files.pbs
@@ -227,6 +258,13 @@ fi
 for line in `FIND`
 do
 	PATIENT_NAME=`echo ${line} | awk -F'_' '{ OFS = "_" ; print $1,$2 }'`
+
+	# (!) This is Cell Line specific! MUST CHECK FOR MATCHED NORMAL
+	ISMATCH="`grep "MATCHEDNORMAL=" ${STARTDIR}/${PATIENT_NAME}/${PATIENT_NAME}.config | awk -F"=" '{print tolower($2)}'`"
+	if [[ -z ${ISMATCH} ]]
+	then
+		ISMATCH="yes"
+	fi
 
 	cd ${STARTDIR}	
 	cd ${line}
@@ -542,37 +580,37 @@ do
 	then
 		cd ..		
 		if [ -d ${PATIENT_NAME} ]
-                then
-                        echo
-                        echo "---------------------------------"
-                        echo "Warning: ${PATIENT_NAME} already exists"
-                        echo
-                        DATE="`date +%Y%m%d-%H:%M`"
-                        echo "Adding time stamp to older folder"
-                        echo "Old folder name=${PATIENT_NAME}"
-                        echo "New folder name=${PATIENT_NAME}_TS${DATE}"
-                        mv ${PATIENT_NAME} ${PATIENT_NAME}_ts${DATE}
+		then
+			echo
+			echo "---------------------------------"
+			echo "Warning: ${PATIENT_NAME} already exists"
+			echo
+			DATE="`date +%Y%m%d-%H:%M`"
+			echo "Adding time stamp to older folder"
+			echo "Old folder name=${PATIENT_NAME}"
+			echo "New folder name=${PATIENT_NAME}_TS${DATE}"
+			mv ${PATIENT_NAME} ${PATIENT_NAME}_ts${DATE}
 
-                        #Rename files
-                        mv ${line} ${PATIENT_NAME}
+			#Rename files
+			mv ${line} ${PATIENT_NAME}
 
-                        #Message
-                        echo
-                        echo "---------------------------------"
-                        echo "RENAMING: ${line}"
-                        echo Old Name=${line}
-                        echo New Name=${PATIENT_NAME}
-                else
-                        #Rename files
-                        mv ${line} ${PATIENT_NAME}
+			#Message
+			echo
+			echo "---------------------------------"
+			echo "RENAMING: ${line}"
+			echo Old Name=${line}
+			echo New Name=${PATIENT_NAME}
+		else
+			#Rename files
+			mv ${line} ${PATIENT_NAME}
 
-                        #Message
-                        echo
-                        echo "---------------------------------"
-                        echo "RENAMING: ${line}"
-                        echo Old Name=${line}
-                        echo New Name=${PATIENT_NAME}
-                fi
+			#Message
+			echo
+			echo "---------------------------------"
+			echo "RENAMING: ${line}"
+			echo Old Name=${line}
+			echo New Name=${PATIENT_NAME}
+		fi
 		cd ${PATIENT_NAME}
 	fi
 
@@ -755,6 +793,9 @@ do
 					elif [[ "$TASSAY" == *E62 ]]
 					then
 						bedFile="/home/tgenref/homo_sapiens/grch37_hg19/capture_targets/illumina_nextera_expanded/NexteraExpandedExome_hs37d5_Targets_PicardPadded100.bed"
+					elif [[ "$TASSAY" == *S4U  ]]
+					then
+						bedFile="/home/tgenref/homo_sapiens/grch37_hg19/capture_targets/agilent_sureselect_v4_plusUTR/Agilent_SureSelect_V4_plusUTR_hs37d5_GRCh37.74_PaddedTargets_intersect_sorted_padded100.bed"
 					fi
 					
 					if [ ${MERGERONLY} = 0 ]	
@@ -769,7 +810,7 @@ do
 						touch vcfMerger_pegasus/${EXOMEPAIR}/SnpEFF_ANN_In_Progress
 					fi
 
-					qsub -v DATAMOVERIP=${DATAMOVERIP},DATAMOVER=${DATAMOVER},BASEDIR="${BASEDIR}",RNAFLAG="${RNAFLAG}",RNASAMPLE="${RNASAMPLE}",RNAASSAY="${RNAASSAY}",CNAONLY="${CNAONLY}",MERGERONLY="${MERGERONLY}",BEDFILE=${bedFile},PBSNAME="${EXOMEPAIR}",STARTDIR="${STARTDIR}",CNAEXOMETARGET="${CNAEXOMETARGET}",NASSAY="${NASSAY}",TASSAY="${TASSAY}",LIBTYPE="${LIBTYPE}",USER="${USER}",PATIENT_NAME="${PATIENT_NAME}",NORMALSAMPLE="${NORMALSAMPLE}",TUMORSAMPLE="${TUMORSAMPLE}",VCF="${VCF}",NORMALDAT="${NORMALDAT}",TUMORDAT="${TUMORDAT}",EXOMEPAIR="${EXOMEPAIR}",EXOMEPAIRS=${EXOMEPAIRSLIST},EXPECTEDPAIRS=${EXPECTEDPAIRSLIST} ${EXOMEPBS}
+					qsub -v DATAMOVERIP=${DATAMOVERIP},DATAMOVER=${DATAMOVER},BASEDIR="${BASEDIR}",RNAFLAG="${RNAFLAG}",RNASAMPLE="${RNASAMPLE}",RNAASSAY="${RNAASSAY}",CNAONLY="${CNAONLY}",MERGERONLY="${MERGERONLY}",BEDFILE=${bedFile},PBSNAME="${EXOMEPAIR}",STARTDIR="${STARTDIR}",CNAEXOMETARGET="${CNAEXOMETARGET}",NASSAY="${NASSAY}",TASSAY="${TASSAY}",LIBTYPE="${LIBTYPE}",USER="${USER}",PATIENT_NAME="${PATIENT_NAME}",NORMALSAMPLE="${NORMALSAMPLE}",TUMORSAMPLE="${TUMORSAMPLE}",VCF="${VCF}",NORMALDAT="${NORMALDAT}",TUMORDAT="${TUMORDAT}",EXOMEPAIR="${EXOMEPAIR}",EXOMEPAIRS=${EXOMEPAIRSLIST},EXPECTEDPAIRS=${EXPECTEDPAIRSLIST},CONTROLSDIR="${CONTROLSDIR}",ISMATCH=${ISMATCH} ${EXOMEPBS}
 
 					if [ $? -ne 0 ]
 					then
@@ -834,7 +875,7 @@ do
 							mkdir cna_manual_2016/${GENOMEPAIR}_unfi
 							touch cna_manual_2016/${GENOMEPAIR}_unfi/CNA_Manual_In_Progress
 	
-							qsub -v DATAMOVERIP=${DATAMOVERIP},DATAMOVER=${DATAMOVER},BASEDIR="${BASEDIR}",PBSNAME=${GENOMEPAIR},DELLY=${DELLY},BEDFILE=${bedFile},STARTDIR="${STARTDIR}",GENOMEPAIR=${GENOMEPAIR},EXOMEPAIR=${EXOMEPAIR},NORMALSAMPLEG="${NORMALSAMPLEG}",TUMORSAMPLEG="${TUMORSAMPLEG}",NASSAY="${NASSAY}",TASSAY="${TASSAY}",LIBTYPE="${LIBTYPE}",PATIENT_NAME="${PATIENT_NAME}",NORMALSAMPLE="${NORMALSAMPLE}",TUMORSAMPLE="${TUMORSAMPLE}",VCF="${VCF}",NORMALDAT="${NORMALDAT}",TUMORDAT="${TUMORDAT}",EXPECTEDPAIRS=${EXPECTEDPAIRSLIST} ${GENOMEPBS}
+				    qsub -v DATAMOVERIP=${DATAMOVERIP},DATAMOVER=${DATAMOVER},BASEDIR="${BASEDIR}",PBSNAME=${GENOMEPAIR},DELLY=${DELLY},BEDFILE=${bedFile},STARTDIR="${STARTDIR}",GENOMEPAIR=${GENOMEPAIR},EXOMEPAIR=${EXOMEPAIR},NORMALSAMPLEG="${NORMALSAMPLEG}",TUMORSAMPLEG="${TUMORSAMPLEG}",NASSAY="${NASSAY}",TASSAY="${TASSAY}",LIBTYPE="${LIBTYPE}",PATIENT_NAME="${PATIENT_NAME}",NORMALSAMPLE="${NORMALSAMPLE}",TUMORSAMPLE="${TUMORSAMPLE}",VCF="${VCF}",NORMALDAT="${NORMALDAT}",TUMORDAT="${TUMORDAT}",EXPECTEDPAIRS=${EXPECTEDPAIRSLIST},CONTROLSDIR=${CONTROLSDIR},ISMATCH=${ISMATCH} ${GENOMEPBS}
 
 							if [ $? -ne 0 ]
 							then
@@ -908,7 +949,7 @@ do
 						mkdir delly/${GENOMEPAIR}
 						touch delly/${GENOMEPAIR}/Delly_In_Progress
 						
-						qsub -v DATAMOVERIP=${DATAMOVERIP},DATAMOVER=${DATAMOVER},BASEDIR="${BASEDIR}",PBSNAME=${GENOMEPAIR},DELLY=${DELLY},STARTDIR="${STARTDIR}",NASSAY="${NASSAY}",TASSAY="${TASSAY}",GENOMEPAIR=${GENOMEPAIR},NORMALSAMPLEG="${NORMALSAMPLEG}",TUMORSAMPLEG="${TUMORSAMPLEG}",PATIENT_NAME="${PATIENT_NAME}",EXPECTEDPAIRS=${EXPECTEDPAIRSLIST} ${GENOMEPBS}
+						qsub -v DATAMOVERIP=${DATAMOVERIP},DATAMOVER=${DATAMOVER},BASEDIR="${BASEDIR}",PBSNAME=${GENOMEPAIR},DELLY=${DELLY},STARTDIR="${STARTDIR}",NASSAY="${NASSAY}",TASSAY="${TASSAY}",GENOMEPAIR=${GENOMEPAIR},NORMALSAMPLEG="${NORMALSAMPLEG}",TUMORSAMPLEG="${TUMORSAMPLEG}",PATIENT_NAME="${PATIENT_NAME}",EXPECTEDPAIRS=${EXPECTEDPAIRSLIST},CONTROLSDIR=${CONTROLSDIR},ISMATCH=${ISMATCH} ${GENOMEPBS}
 
 						if [ $? -ne 0 ]
 						then
@@ -931,7 +972,7 @@ do
 		
 		if [ ${CNAONLY} = 0 ] && [ ${MERGERONLY} = 0 ]
 		then
-			RNACOUNT="`grep "SAMPLE=.*,RNA," ${PATIENT_NAME}.config | wc -l`"
+			RNACOUNT="`awk -F',' '$0 ~ /^SAMPLE=/ && $3 == "RNA"' ${PATIENT_NAME}.config | wc -l`"
 	
 			if [ ${RNACOUNT} = 0 ]
 			then
@@ -957,7 +998,7 @@ do
 				RNACHECK=()
 				RNACHECK2=()
 
-				for RNALIST in `grep "SAMPLE=.*,RNA," ${PATIENT_NAME}.config`
+				for RNALIST in `awk -F',' '$0 ~ /^SAMPLE=/ && $3 == "RNA"' ${PATIENT_NAME}.config`
 				do
 					ASSAY="`echo ${RNALIST} | awk -F"[=,]" '{print $2}'`"
 					RNASAMPLEID="`echo ${RNALIST} | awk -F"[=,]" '{print $3}'`"
@@ -968,11 +1009,16 @@ do
 				RNACHECKLIST=`echo ${RNACHECK[@]} | sed 's/\s/@/g'`
 				RNACHECKLIST2=`echo ${RNACHECK2[@]} | sed 's/\s/@/g'`
 
-				for RNASAMPLE in `grep "SAMPLE=.*,RNA," ${PATIENT_NAME}.config`
+				for RNASAMPLE in `awk -F',' '$0 ~ /^SAMPLE=/ && $3 == "RNA"' ${PATIENT_NAME}.config`
 				do
 					LIBTYPE="RNA"
 					ASSAY="`echo ${RNASAMPLE} | awk -F"[=,]" '{print $2}'`"
-					STUDY="`echo ${PATIENT_NAME} | awk -F'_' '{print $1}'`"
+					
+					if [[ ${SLOWQ} == "no" ]]
+					then
+						STUDY="`echo ${PATIENT_NAME} | awk -F'_' '{print $1}'`"
+					fi	
+					
 					RNASAMPLEID="`echo ${RNASAMPLE} | awk -F"[=,]" '{print $3}'`"
 					RNATUMORSHORT="`echo ${RNASAMPLEID} | cut -d_ -f1,2,3,4,5`"
 					
@@ -1067,12 +1113,20 @@ do
 						TUMORSAMPLEG=NotAvailable
 					fi
 
-					# Will need code to get fastq directory and library type of RNA library for salmon      
-
-					FASTQDIR="`grep "${STUDY}_STUDY=" ${CONSTANTS} | cut -d= -f2 | tr -d '\n'`"
+					# Will need code to get fastq directory and library type of RNA library for salmon
+					
+					# First, check to see if we shoudl use user provided FASTQ directory path
+					if [[ ${SLOWQ} == "no" ]]
+					then
+						FASTQDIR="`grep "${STUDY}_STUDY=" ${CONSTANTS} | cut -d= -f2 | tr -d '\n'`"
+					elif [[ ${SLOWQ} == "yes" ]]
+					then
+						FASTQDIR=${FASTQPATHS}
+					fi
+						
 					RNATYPE="`grep "${ASSAY}_SALMONlibType=" ${CONSTANTS} | cut -d= -f2 | tr -d '\n'`"
 	
-					qsub -v DATAMOVERIP=${DATAMOVERIP},DATAMOVER=${DATAMOVER},NASSAY=${NASSAY},TASSAY=${TASSAY},TUMORSAMPLEG=${TUMORSAMPLEG},NORMALSAMPLEG=${NORMALSAMPLEG},FUSIONONLY="${FUSIONONLY}",TOPHATONLY="${TOPHATONLY}",BASEDIR="${BASEDIR}",PBSNAME=${RNASAMPLEID},STARTDIR="${STARTDIR}",RNATYPE="${RNATYPE}",USER="${USER}",ASSAY="${ASSAY}",FASTQDIR="${FASTQDIR}",RNASAMPLEID="${RNASAMPLEID}",PATIENT_NAME="${PATIENT_NAME}",LIBTYPE="${LIBTYPE}",RNACHECK=${RNACHECKLIST},RNACHECK2=${RNACHECKLIST2} ${RNAPBS}
+					qsub -v DATAMOVERIP=${DATAMOVERIP},DATAMOVER=${DATAMOVER},NASSAY=${NASSAY},TASSAY=${TASSAY},TUMORSAMPLEG=${TUMORSAMPLEG},NORMALSAMPLEG=${NORMALSAMPLEG},FUSIONONLY="${FUSIONONLY}",TOPHATONLY="${TOPHATONLY}",BASEDIR="${BASEDIR}",PBSNAME=${RNASAMPLEID},STARTDIR="${STARTDIR}",RNATYPE="${RNATYPE}",USER="${USER}",ASSAY="${ASSAY}",FASTQDIR="${FASTQDIR}",RNASAMPLEID="${RNASAMPLEID}",PATIENT_NAME="${PATIENT_NAME}",LIBTYPE="${LIBTYPE}",RNACHECK=${RNACHECKLIST},RNACHECK2=${RNACHECKLIST2},CONTROLSDIR=${CONTROLSDIR},ISMATCH=${ISMATCH} ${RNAPBS}
 
 					STATUS=$?
 

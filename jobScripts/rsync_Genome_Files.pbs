@@ -9,8 +9,19 @@ cd $PBS_O_WORKDIR
 
 JOBSDIR=${BASEDIR}/jobScripts
 
+
 if [[ ${DELLY} == "No" ]]
 then
+	
+	# (!) This if statement is cell lines specific. MUST CHECK FOR MATCHED NORMAL.
+	if [[ ${ISMATCH} == "no" ]]
+	then
+		NORMBAMDIR=${CONTROLSDIR}${NASSAY}/${NORMALSAMPLEG}/${NORMALSAMPLEG}
+		NORMDATPATH=${CONTROLSDIR}${NASSAY}/${NORMALSAMPLEG}/${NORMALDAT}
+	else
+		NORMBAMDIR=${STARTDIR}/${PATIENT_NAME}/${NASSAY}/${NORMALSAMPLEG}/${NORMALSAMPLEG}
+		NORMDATPATH=${STARTDIR}/${PATIENT_NAME}/${NASSAY}/${NORMALSAMPLEG}/${NORMALDAT}
+	fi
 
 	# Make needed directories for Genome
 
@@ -71,7 +82,7 @@ then
 	#{{{
 
 	# Genome Normal Dat
-	ssh ${USER}@${DATAMOVER} "rsync ${STARTDIR}/${PATIENT_NAME}/${NASSAY}/${NORMALSAMPLEG}/${NORMALDAT} /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_unfi/ "
+	ssh ${USER}@${DATAMOVER} "rsync ${NORMDATPATH}  /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_unfi/ "
 
 	if [ $? -ne 0 ]
 	then
@@ -166,7 +177,7 @@ then
 	#{{{
 
 	# Genome Normal Dat
-	ssh ${USER}@${DATAMOVER} "rsync ${STARTDIR}/${PATIENT_NAME}/${NASSAY}/${NORMALSAMPLEG}/${NORMALDAT} /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_filt2012/ "
+	ssh ${USER}@${DATAMOVER} "rsync ${NORMDATPATH} /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_filt2012/ "
 
 	if [ $? -ne 0 ]
 	then
@@ -261,7 +272,7 @@ then
 	#{{{
 
 	# Genome Normal Dat
-	ssh ${USER}@${DATAMOVER} "rsync ${STARTDIR}/${PATIENT_NAME}/${NASSAY}/${NORMALSAMPLEG}/${NORMALDAT} /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_filt2016/ "
+	ssh ${USER}@${DATAMOVER} "rsync ${NORMDATPATH} /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/cna_manual_2016/${GENOMEPAIR}_filt2016/ "
 
 	if [ $? -ne 0 ]
 	then
@@ -408,6 +419,15 @@ then
 
 elif [[ ${DELLY} == "Yes" ]]
 then
+
+	# (!) This if statement is cell lines specific. MUST CHECK FOR MATCHED NORMAL.
+	if [[ ${ISMATCH} == "no" ]]
+	then
+		NORMBAMDIR=${CONTROLSDIR}${NASSAY}/${NORMALSAMPLEG}/${NORMALSAMPLEG}
+	else
+		NORMBAMDIR=${STARTDIR}/${PATIENT_NAME}/${NASSAY}/${NORMALSAMPLEG}/${NORMALSAMPLEG}
+	fi
+
 	# Make needed directories for delly
 
 	DIR=/scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/delly/${GENOMEPAIR}
@@ -452,7 +472,7 @@ then
 
 
 
-	ssh ${USER}@${DATAMOVER} " if [ -d \"\` ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \`\" ] ; then LNDIR=\`ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1\` ; ln -s \${LNDIR}/${NASSAY}/${NORMALSAMPLEG}/${NORMALSAMPLEG}.bwa.final.bam /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/delly/${GENOMEPAIR}/${NORMALSAMPLEG}.bwa.final.bam ; else rsync ${STARTDIR}/${PATIENT_NAME}/${NASSAY}/${NORMALSAMPLEG}/${NORMALSAMPLEG}.bwa.final.bam /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/delly/${GENOMEPAIR}/  ; fi "
+	ssh ${USER}@${DATAMOVER} " if [ -d \"\` ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \`\" ] ; then LNDIR=\`ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1\` ; ln -s \${LNDIR}/${NASSAY}/${NORMALSAMPLEG}/${NORMALSAMPLEG}.bwa.final.bam /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/delly/${GENOMEPAIR}/${NORMALSAMPLEG}.bwa.final.bam ; else rsync ${NORMBAMDIR}.bwa.final.bam /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/delly/${GENOMEPAIR}/  ; fi "
 
 	if [ $? -ne 0 ]
 	then
@@ -464,7 +484,7 @@ then
 	        exit 1
 	fi
 
-	ssh ${USER}@${DATAMOVER} " if [ -d \"\` ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \`\" ] ; then LNDIR=\`ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1\` ; ln -s \${LNDIR}/${NASSAY}/${NORMALSAMPLEG}/${NORMALSAMPLEG}.bwa.final.bai /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/delly/${GENOMEPAIR}/${NORMALSAMPLEG}.bwa.final.bai ; else rsync ${STARTDIR}/${PATIENT_NAME}/${NASSAY}/${NORMALSAMPLEG}/${NORMALSAMPLEG}.bwa.final.bai /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/delly/${GENOMEPAIR}/ ; fi   "
+	ssh ${USER}@${DATAMOVER} " if [ -d \"\` ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1 \`\" ] ; then LNDIR=\`ls -d /scratch/tgenjetstream/projects/${PATIENT_NAME}* | tail -n1\` ; ln -s \${LNDIR}/${NASSAY}/${NORMALSAMPLEG}/${NORMALSAMPLEG}.bwa.final.bai /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/delly/${GENOMEPAIR}/${NORMALSAMPLEG}.bwa.final.bai ; else rsync ${NORMBAMDIR}.bwa.final.bai /scratch/${USER}/post_medusa_processing/${PATIENT_NAME}/delly/${GENOMEPAIR}/ ; fi   "
 
 	if [ $? -ne 0 ]
 	then
