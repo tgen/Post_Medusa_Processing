@@ -260,7 +260,7 @@ do
 	PATIENT_NAME=`echo ${line} | awk -F'_' '{ OFS = "_" ; print $1,$2 }'`
 
 	# (!) This is Cell Line specific! MUST CHECK FOR MATCHED NORMAL
-	ISMATCH="`grep "MATCHEDNORMAL=" ${STARTDIR}/${PATIENT_NAME}/${PATIENT_NAME}.config | awk -F"=" '{print tolower($2)}'`"
+	ISMATCH="`grep "MATCHEDNORMAL=" ${STARTDIR}/${line}/${PATIENT_NAME}.config | awk -F"=" '{print tolower($2)}'`"
 	if [[ -z ${ISMATCH} ]]
 	then
 		ISMATCH="yes"
