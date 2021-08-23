@@ -1,0 +1,82 @@
+#!/bin/bash
+#PBS -l nodes=1:ppn=16
+#PBS -N GenotypeSubBatch_gVCFs
+#PBS -l walltime=96:00:00
+#PBS -m abe
+#PBS -M jkeats@tgen.org
+#PBS -j oe
+
+cd $PBS_O_WORKDIR
+
+######################################
+# Needed variables
+
+. INPUT.ini
+
+OUTPUT_CALLS=${STUDY}_Exome_Raw.vcf
+
+
+#####################################################################################################
+
+# This script is called from the original starting folder that had all the gVCFs originally
+
+#Step1 - GENERATE THE LIST OF INPUT SUB-BATCH COMBINED gVCF FILES
+ls -d subBatch_* > temp_samples.txt
+
+#Step2 - Pull off first record
+head -n1 temp_samples.txt > temp_first.txt
+FIRST_SAMPLE=`cat temp_first.txt`
+INPUT_VARIANT_LIST="--variant ${FIRST_SAMPLE}/${STUDY}_${FIRST_SAMPLE}.g.vcf "
+
+#Step 3 - Pull off second to last records
+awk 'NR>1' temp_samples.txt > temp_others.txt
+
+#Step4 - Generate the input bam list
+for line in `cat temp_others.txt`
+do
+
+echo Adding sample ${line}
+INPUT_VARIANT_LIST="${INPUT_VARIANT_LIST}--variant ${line}/${STUDY}_${line}.g.vcf "
+
+done
+
+echo
+echo "-------------------------------------------"
+echo "COMPLETE VARIANT LIST:"
+echo ${INPUT_VARIANT_LIST}
+
+#Progress Marker
+touch InProgress_Final_GenotypeSubBatchGVCFs
+
+java -jar -Xmx4g ${GATKPATH}/GenomeAnalysisTK.jar \
+	-T GenotypeGVCFs \
+	-nt 8 \
+	-R ${REF} \
+	${INPUT_VARIANT_LIST}\
+	--dbsnp ${DBSNP} \
+	--out ${OUTPUT_CALLS}
+
+#Progress Marker
+if [ "$?" = "0" ]
+then
+	touch Completed_Final_GenotypeSubBatchGVCFs
+	rm InProgress_Final_GenotypeSubBatchGVCFs
+else
+	touch Fail_Final_GenotypeSubBatchGVCFs
+	rm InProgress_Final_GenotypeSubBatchGVCFs
+	exit 1
+fi
+	
+rm temp_samples.txt
+rm temp_first.txt
+rm temp_others.txt
+
+########
+## If we got to this point we can start the VQSR step
+#######
+
+# Start VQSR
+qsub /home/jkeats/toolkit_jkeats/haplotypeCaller_gVCF_Pipeline/start_at_gVCF/gVCF_Step3_VQSR_snpANDindel.pbs
+
+
+
